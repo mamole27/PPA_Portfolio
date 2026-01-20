@@ -15,8 +15,8 @@ Advanced spatial analysis and data science for urban planning and public policy.
 - **Final Project:** Capstone modeling challenge
 
 ## About Me
-[Students will customize this section]
+My name is Mackenna Amole. I am a first-year MCP student with a concentration in Urban Design. I have a B.S. in Architecture from the University of Pittsburgh, completed in May 2025. I am taking this course to further develop my coding abilities and to strengthen my skills outside of design.
 
 ## Contact
-- Email: [your.email@upenn.edu]
-- GitHub: [@your-username]
+- Email: mamole@upenn.edu
+- GitHub: @mamole27
