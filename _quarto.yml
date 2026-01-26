@@ -10,7 +10,7 @@ website:
         text: Home
       - text: Labs
         menu:
-          - href: PPA_Portfolio/lab/lab_0/lab_0.qmd
+          - href: labs/lab_0/lab_0.qmd
             text: "Lab 0: dplyr Basics"
 
 format:
