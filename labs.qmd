@@ -1,0 +1,10 @@
+---
+title: "Labs"
+format: html
+---
+
+# Labs
+
+Here is a list of your lab projects:
+
+- [Lab 0](labs/lab_0/lab_0.html)
