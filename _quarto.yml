@@ -8,6 +8,9 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: labs
+        text: Labs
+      
 
 format:
   html:
