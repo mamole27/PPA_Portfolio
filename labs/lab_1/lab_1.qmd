@@ -52,13 +52,20 @@ If there is a special character like a colon, you need use double quote mark so 
 
 ```{r setup}
 # Load required packages (hint: you need tidycensus, tidyverse, and knitr)
+library(tidyverse)
+library(tidycensus)
+library(scales)
+library(RColorBrewer)
+library(knitr)
 
 # Set your Census API key
+census_api_key(Sys.getenv("CENSUS_API_KEY"))
 
 # Choose your state for analysis - assign it to a variable called my_state
+my_state <- "PA"
 ```
 
-**State Selection:** I have chosen **[Your State Name]** for this analysis because: [Brief explanation of why you chose this state]
+**State Selection:** I have chosen **Pennsylvania** for this analysis because: I gre up here, attended undergrad here, and now am in grad school here.
 
 # Part 2: County-Level Resource Assessment
 
@@ -77,11 +84,23 @@ If there is a special character like a colon, you need use double quote mark so 
 
 ```{r county-data}
 # Write your get_acs() code here
-
+  medHHin_totalpop <- get_acs(
+    geography = "county",
+    variables = c(
+    total_pop = "B01003_001",       # Total population
+    median_income = "B19013_001"   # Median household income
+  ),
+    state = "PA",
+    year = 2022,
+    survey = "acs5",
+    output = "wide"
+  )
 # Clean the county names to remove state name and "County" 
 # Hint: use mutate() with str_remove()
-
+county_incomepop <- medHHin_totalpop %>%
+  mutate(county_name = str_remove(NAME, paste0("County, Pennsylvania")))
 # Display the first few rows
+glimpse(county_incomepop)
 ```
 
 ## 2.2 Data Quality Assessment
@@ -100,8 +119,22 @@ If there is a special character like a colon, you need use double quote mark so 
 
 ```{r income-reliability}
 # Calculate MOE percentage and reliability categories using mutate()
+county_incomepop <- county_incomepop %>%
+  mutate(MOE_per = median_incomeM/median_incomeE * 100)
+
+county_incomepop <- county_incomepop %>%
+  mutate(
+    reliability = case_when(
+    MOE_per < 5 ~ "High",
+    MOE_per > 5 & MOE_per < 10 ~ "Moderate",
+    MOE_per > 10 ~ "Low"))
+
+county_incomepop <- county_incomepop %>%
+  mutate(Low_Flag = if_else(reliability == "Low", 1L, 0L))
 
 # Create a summary showing count of counties in each reliability category
+
+
 # Hint: use count() and mutate() to add percentages
 ```
 
