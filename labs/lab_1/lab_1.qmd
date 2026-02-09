@@ -98,7 +98,8 @@ my_state <- "PA"
 # Clean the county names to remove state name and "County" 
 # Hint: use mutate() with str_remove()
 county_incomepop <- medHHin_totalpop %>%
-  mutate(county_name = str_remove(NAME, paste0("County, Pennsylvania")))
+  mutate(county_name = str_remove(NAME, paste0(" County, Pennsylvania")))
+
 # Display the first few rows
 glimpse(county_incomepop)
 ```
@@ -125,15 +126,20 @@ county_incomepop <- county_incomepop %>%
 county_incomepop <- county_incomepop %>%
   mutate(
     reliability = case_when(
-    MOE_per < 5 ~ "High",
+    MOE_per < 5 ~ "Low",
     MOE_per > 5 & MOE_per < 10 ~ "Moderate",
-    MOE_per > 10 ~ "Low"))
+    MOE_per > 10 ~ "High"))
 
 county_incomepop <- county_incomepop %>%
   mutate(Low_Flag = if_else(reliability == "Low", 1L, 0L))
 
 # Create a summary showing count of counties in each reliability category
+county_incomepop %>%
+  group_by(reliability) %>%
+  summarise(count = n(), .groups = "drop")
 
+#57 Low
+#10 Moderate
 
 # Hint: use count() and mutate() to add percentages
 ```
@@ -152,12 +158,33 @@ county_incomepop <- county_incomepop %>%
 
 ```{r high-uncertainty}
 # Create table of top 5 counties by MOE percentage
+high5_uncertainty <- county_incomepop %>%
+  arrange(desc(MOE_per)) %>%
+  slice(1:5) %>%
+    select(
+    NAME,
+    median_incomeE,
+    median_incomeM,
+    MOE_per,
+    reliability
+  )
 
 # Format as table with kable() - include appropriate column names and caption
+kable(
+  high5_uncertainty,
+  col.names = c(
+    "County",
+    "Median Income",
+    "Income Margin of Error",
+    "Margin Of Error Percentage",
+    "Reliability Category"
+  ),
+  caption = "Top 5 Counties with the Highest Margin of Error Percentages"
+)
 ```
 
 **Data Quality Commentary:**
-
+#ADD MY COMMENTARY
 [Write 2-3 sentences explaining what these results mean for algorithmic decision-making. Consider: Which counties might be poorly served by algorithms that rely on this income data? What factors might contribute to higher uncertainty?]
 
 # Part 3: Neighborhood-Level Analysis
@@ -171,12 +198,31 @@ county_incomepop <- county_incomepop %>%
 ```{r select-counties}
 # Use filter() to select 2-3 counties from your county_reliability data
 # Store the selected counties in a variable called selected_counties
-
+selected_counties <- county_incomepop %>%
+  filter(
+    county_name %in% c("Allegheny", "Forest", "Philadelphia")
+  )
 # Display the selected counties with their key characteristics
 # Show: county name, median income, MOE percentage, reliability category
+selected_counties %>%
+  select(
+    county_name,
+    median_incomeE,
+    MOE_per,
+    reliability
+  ) %>%
+  kable(
+    col.names = c(
+      "County",
+      "Median Income",
+      "MOE Percentage",
+      "Reliability Category"
+    ),
+    caption = "Selected Counties for Neighborhood-Level (Tract) Analysis"
+  )
 ```
 
-**Comment on the output:** [write something :)]
+**Comment on the output:** Selected counties are Allegheny (with PA's lowest MOE %), Forest (with PA's highest MOE %), and Philadelphia (as an interest because we live and study here).
 
 ## 3.2 Tract-Level Demographics
 
@@ -191,14 +237,43 @@ county_incomepop <- county_incomepop %>%
 
 ```{r tract-demographics}
 # Define your race/ethnicity variables with descriptive names
+race_vars <- c(
+  total_pop = "B03002_001",
+  white = "B03002_003",
+  black = "B03002_004",
+  hispanic = "B03002_012"
+)
 
 # Use get_acs() to retrieve tract-level data
 # Hint: You may need to specify county codes in the county parameter
+# Allegheny = 003, Forest = 053, Philadelphia = 101
+tract_demographics <- get_acs(
+  geography = "tract",
+  state = "PA",
+  county = c("003", "053", "101"),
+  variables = race_vars,
+  year = 2022,      # same ACS year used earlier
+  output = "wide"
+)
 
 # Calculate percentage of each group using mutate()
 # Create percentages for white, Black, and Hispanic populations
+tract_demographics <- tract_demographics %>%
+  mutate(
+    pct_white = whiteE / total_popE * 100,
+    pct_black = blackE / total_popE * 100,
+    pct_hispanic = hispanicE / total_popE * 100
+  )
 
 # Add readable tract and county name columns using str_extract() or similar
+tract_demographics <- tract_demographics %>%
+  mutate(
+    # Extract tract name (e.g., "Census Tract 103.01")
+    tract_name = str_extract(NAME, "^Census Tract[^;]+"),
+    
+    # Extract county name (e.g., "Allegheny")
+    county_name = str_extract(NAME, "(?<=; )[A-Za-z ]+(?= County)")
+  )
 ```
 
 ## 3.3 Demographic Analysis
@@ -208,11 +283,37 @@ county_incomepop <- county_incomepop %>%
 ```{r demographic-analysis}
 # Find the tract with the highest percentage of Hispanic/Latino residents
 # Hint: use arrange() and slice() to get the top tract
+#high5_uncertainty <- county_incomepop %>% arrange(desc(MOE_per)) %>% slice(1:5) %>%select(NAME,median_incomeE,median_incomeM,MOE_per,reliability)
+tract_mostlatino <- tract_demographics %>%
+  arrange(desc(pct_hispanic)) %>%
+  slice(1)
 
 # Calculate average demographics by county using group_by() and summarize()
 # Show: number of tracts, average percentage for each racial/ethnic group
-
+county_demographics <- tract_demographics %>%
+  # Group tracts by county
+  group_by(county_name) %>%
+  
+  # Summarize tract counts and average percentages
+  summarise(
+    num_tracts = n(),
+    avg_pct_white = mean(pct_white, na.rm = TRUE),
+    avg_pct_black = mean(pct_black, na.rm = TRUE),
+    avg_pct_hispanic = mean(pct_hispanic, na.rm = TRUE),
+    .groups = "drop"
+  )
 # Create a nicely formatted table of your results using kable()
+kable(
+  county_demographics,
+  col.names = c(
+    "County",
+    "Number of Tracts",
+    "Avg % White",
+    "Avg % Black",
+    "Avg % Hispanic/Latino"
+  ),
+  caption = "Average Tract-Level Demographics by County"
+)
 ```
 
 # Part 4: Comprehensive Data Quality Evaluation
@@ -229,11 +330,27 @@ county_incomepop <- county_incomepop %>%
 ```{r demographic-moe}
 # Calculate MOE percentages for white, Black, and Hispanic variables
 # Hint: use the same formula as before (margin/estimate * 100)
+tract_demographics <- tract_demographics %>%
+  mutate(MOE_per_white = whiteM/whiteE *100 ) %>%
+  mutate(MOE_per_black = blackM/blackE *100) %>%
+  mutate(MOE_per_hispanic = hispanicM/hispanicE*100)
 
 # Create a flag for tracts with high MOE on any demographic variable
 # Use logical operators (| for OR) in an ifelse() statement
-
+tract_demographics <- tract_demographics %>%
+  mutate(high_moe_flag = ifelse(
+    MOE_per_white > 15 | MOE_per_black > 15 | MOE_per_hispanic > 16,
+    "High MOE",
+    "Acceptable"
+  ))
 # Create summary statistics showing how many tracts have data quality issues
+tract_demographics %>%
+  summarise(
+    total_tracts = n(),
+    tracts_with_issues = sum(high_moe_flag == "High MOE", na.rm = TRUE),
+    percent_with_issues = 100 * mean(high_moe_flag == "High MOE", na.rm = TRUE)
+  )
+#100% ...
 ```
 
 ## 4.2 Pattern Analysis
@@ -242,14 +359,78 @@ county_incomepop <- county_incomepop %>%
 
 ```{r pattern-analysis}
 # Group tracts by whether they have high MOE issues
+tract_demographics <- tract_demographics %>%
+  mutate(
+    high_moe_white = ifelse(MOE_per_white > 15, "High MOE", "Acceptable"),
+    high_moe_black = ifelse(MOE_per_black > 15, "High MOE", "Acceptable"),
+    high_moe_hispanic = ifelse(MOE_per_hispanic > 15, "High MOE", "Acceptable")
+  )
+
+tracts_by_race_moe <- tract_demographics %>%
+  summarise(
+    white_high_moe = sum(high_moe_white == "High MOE", na.rm = TRUE),
+    black_high_moe = sum(high_moe_black == "High MOE", na.rm = TRUE),
+    hispanic_high_moe = sum(high_moe_hispanic == "High MOE", na.rm = TRUE),
+    total_tracts = n()
+  ) %>%
+  mutate(
+    pct_white_high_moe = 100 * white_high_moe / total_tracts,
+    pct_black_high_moe = 100 * black_high_moe / total_tracts,
+    pct_hispanic_high_moe = 100 * hispanic_high_moe / total_tracts
+  )
+
 # Calculate average characteristics for each group:
 # - population size, demographic percentages
 
+#white
+white_summary <- tract_demographics %>%
+  group_by(high_moe_white) %>%
+  summarise(
+    n_tracts = n(),
+    avg_population = mean(total_popE, na.rm = TRUE),
+    avg_pct_white = mean(pct_white, na.rm = TRUE),
+    avg_pct_black = mean(pct_black, na.rm = TRUE),
+    avg_pct_hispanic = mean(pct_hispanic, na.rm = TRUE)
+  ) %>%
+  mutate(subgroup = "White")
+
+#black
+black_summary <- tract_demographics %>%
+  group_by(high_moe_black) %>%
+  summarise(
+    n_tracts = n(),
+    avg_population = mean(total_popE, na.rm = TRUE),
+    avg_pct_white = mean(pct_white, na.rm = TRUE),
+    avg_pct_black = mean(pct_black, na.rm = TRUE),
+    avg_pct_hispanic = mean(pct_hispanic, na.rm = TRUE)
+  ) %>%
+  mutate(subgroup = "Black")
+
+#hispanic
+hispanic_summary <- tract_demographics %>%
+  group_by(high_moe_hispanic) %>%
+  summarise(
+    n_tracts = n(),
+    avg_population = mean(total_popE, na.rm = TRUE),
+    avg_pct_white = mean(pct_white, na.rm = TRUE),
+    avg_pct_black = mean(pct_black, na.rm = TRUE),
+    avg_pct_hispanic = mean(pct_hispanic, na.rm = TRUE)
+  ) %>%
+  mutate(subgroup = "Hispanic")
+
+
 # Use group_by() and summarize() to create this comparison
+pattern_summary <- bind_rows(white_summary, black_summary, hispanic_summary) %>%
+  # Optional: reorder columns for clarity
+  select(subgroup, everything()) %>%
+  arrange(subgroup, desc(n_tracts))
 # Create a professional table showing the patterns
+kable(pattern_summary, digits = 1,
+      caption = "Average Tract Characteristics by Racial/Ethnic Subgroup and MOE Flag")
 ```
 
-**Pattern Analysis:** [Describe any patterns you observe. Do certain types of communities have less reliable data? What might explain this?]
+**Pattern Analysis:** Since ACS provides an estimate (as opposed to a more exact count from the Census) and census tracts are a pretty granular level to analyze, it makes sense that there are some substantial margins of error. However, I was surprised to see that all 804 census tracts in this analysis were flagged for having at least one MOE of any race greater than 15%.
+In further pattern analysis, Black & Hispanic tracts have significantly more flagged as having High Margins of Error (there is only 1! Latino tract with an Acceptable MOE!). This means Black and Latino residents of these 3 counties are significantly worse represented in the data.
 
 
 # Part 5: Policy Recommendations
