@@ -267,10 +267,7 @@ tract_demographics <- tract_demographics %>%
 # Add readable tract and county name columns using str_extract() or similar
 tract_demographics <- tract_demographics %>%
   mutate(
-    # Extract tract name (e.g., "Census Tract 103.01")
     tract_name = str_extract(NAME, "^Census Tract[^;]+"),
-    
-    # Extract county name (e.g., "Allegheny")
     county_name = str_extract(NAME, "(?<=; )[A-Za-z ]+(?= County)")
   )
 ```
@@ -290,10 +287,7 @@ tract_mostlatino <- tract_demographics %>%
 # Calculate average demographics by county using group_by() and summarize()
 # Show: number of tracts, average percentage for each racial/ethnic group
 county_demographics <- tract_demographics %>%
-  # Group tracts by county
   group_by(county_name) %>%
-  
-  # Summarize tract counts and average percentages
   summarise(
     num_tracts = n(),
     avg_pct_white = mean(pct_white, na.rm = TRUE),
@@ -420,9 +414,9 @@ hispanic_summary <- tract_demographics %>%
 
 # Use group_by() and summarize() to create this comparison
 pattern_summary <- bind_rows(white_summary, black_summary, hispanic_summary) %>%
-  # Optional: reorder columns for clarity
   select(subgroup, everything()) %>%
   arrange(subgroup, desc(n_tracts))
+
 # Create a professional table showing the patterns
 kable(pattern_summary, digits = 1,
       caption = "Average Tract Characteristics by Racial/Ethnic Subgroup and MOE Flag")
