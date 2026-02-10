@@ -126,9 +126,9 @@ county_incomepop <- county_incomepop %>%
 county_incomepop <- county_incomepop %>%
   mutate(
     reliability = case_when(
-    MOE_per < 5 ~ "Low",
+    MOE_per < 5 ~ "High",
     MOE_per > 5 & MOE_per < 10 ~ "Moderate",
-    MOE_per > 10 ~ "High"))
+    MOE_per > 10 ~ "Low"))
 
 county_incomepop <- county_incomepop %>%
   mutate(Low_Flag = if_else(reliability == "Low", 1L, 0L))
@@ -184,8 +184,7 @@ kable(
 ```
 
 **Data Quality Commentary:**
-#ADD MY COMMENTARY
-[Write 2-3 sentences explaining what these results mean for algorithmic decision-making. Consider: Which counties might be poorly served by algorithms that rely on this income data? What factors might contribute to higher uncertainty?]
+Counties with lower data quality and/or smaller populations may be more poorly served by these algorithms. Factors such as the accuracy of the median income estimate may contribute to this challenge.
 
 # Part 3: Neighborhood-Level Analysis
 
@@ -446,8 +445,11 @@ In further pattern analysis, Black & Hispanic tracts have significantly more fla
 4. **Strategic Recommendations**: What should the Department implement to address these systematic issues?
 
 **Executive Summary:**
+A common pattern across the four analyses is that data quality issues are not random, but are concentrated around certain communities. Black and Latino communities and tracts with smaller populations have significantly higher margins of error. By initially flagging for a tract having potentially unreliable data when any of the three analyzed racial groups' (white, Black, Latino) margin of error was greater than 15%, this encompassed all 804 included tracts, suggesting a high-level of data unreliability. However, further steps looking into the data more granularly very quickly highlighted that the margin of error is extremely high for Latino (>99%) and Black (>98%) tracts. This means, amongst other concerns, that data quality issues specifically related to these racial groups may be overlooked or unaddressed. 
+Following this, Black and Latino communities face the greatest risk of algorithmic bias. The data attributed to these groups in the ACS surveys are estimates with extremely high margins of error and rates of margins of error. The level of uncertainty and how widespread this quality issue spreads both signify that these data are unlikely to reflect the true population. And, with a less accurate picture of these communities, plans and community action are more likely to overlook and/or plan without adequate consideration for these groups.
+Underlying factors that may drive data quality issues and/or bias risk include the data collection methods. As previously stated, the ACS is a survey of citizens conducted more frequently than the decennial census. Thus, the ACS data are based on a sample of the complete population. When estimating the demographics of, for example, smaller communities (the tract level is relatively small and hard to encapsulate) can have larger margins of error just based on the sample size and how the sample is translated to different geographies. Additionally, groups that have been historically marginalized are less likely to be well-covered in this data and therefore may be marginalized further.
+Despite its challenges, ACS data is a significant opportunity for understanding change over time and dates more frequent than the Census. It is, however, absolutely necessary for the Department to address these systematic issues, in order to utilize this data as a tool without perpetuating certain groups' marginalization. The department can make use of the flagging mechanisms used here to set a threshold for when a Margin Of Error is significant; when data are flagged for having high margins of error, this can be noted and taken into account in planning. Specifically, when high MOEs are flagged, either further data collection/research can be produced or the data can be not the primary driver of any planning decisions.
 
-[Your integrated 4-paragraph summary here]
 
 ## 6.3 Specific Recommendations
 
@@ -457,44 +459,70 @@ In further pattern analysis, Black & Hispanic tracts have significantly more fla
 # Create a summary table using your county reliability data
 # Include: county name, median income, MOE percentage, reliability category
 
+county_incomepop
+county_incomepop <- county_incomepop %>%
+  mutate(
+    algorithm_recommendation = case_when(
+      reliability == "High" ~
+        "Safe for algorithmic decisions",
+
+      reliability == "Moderate" ~
+        "Use with caution – monitor outcomes",
+
+      reliability == "Low" ~
+        "Requires manual review or additional data",
+
+      TRUE ~ NA_character_
+    )
+  )
+county_algorithm <- county_incomepop %>%
+  select(county_name,median_incomeE,MOE_per,reliability,algorithm_recommendation)
+
 # Add a new column with algorithm recommendations using case_when():
 # - High Confidence: "Safe for algorithmic decisions"
 # - Moderate Confidence: "Use with caution - monitor outcomes"  
 # - Low Confidence: "Requires manual review or additional data"
 
+
 # Format as a professional table with kable()
+kable(
+  county_algorithm,
+  digits = 1,
+  caption = "County-Level Data Reliability and Algorithm Implementation Recommendations"
+)
+
 ```
 
 **Key Recommendations:**
 
 **Your Task:** Use your analysis results to provide specific guidance to the department.
 
-1. **Counties suitable for immediate algorithmic implementation:** [List counties with high confidence data and explain why they're appropriate]
+1. **Counties suitable for immediate algorithmic implementation:** PA has primarily counties with high confidence based on these parameters. Allegheny and Philadelphia counties both fall into this category. These counties' data are solid at the county level, but as seen in this analysis, planners must be aware of the groups who are hidden and whose data is not flagged at the county level despite its low confidence at smaller geographies. 
 
-2. **Counties requiring additional oversight:** [List counties with moderate confidence data and describe what kind of monitoring would be needed]
+2. **Counties requiring additional oversight:** Cameron, Carbon, Elk, Forest (ANALYSIS), Greene, Montour, Snyder, SUllivan, Union, and Warren counties have moderate reliability data. This means that the data may be okay, but planners relying on this data should be aware of this flag and be prepared to adapt or complete further data collection.
 
-3. **Counties needing alternative approaches:** [List counties with low confidence data and suggest specific alternatives - manual review, additional surveys, etc.]
+3. **Counties needing alternative approaches:** PA has no counties with low confidence based on these parameters. However, since all 804 PA tracts analyzed across three counties were found to be unreliable, planners should be aware of the subgroups within counties that may be overlooked or misrepresented by seemingly high-confidence data.
 
 ## Questions for Further Investigation
-
-[List 2-3 questions that your analysis raised that you'd like to explore further in future assignments. Consider questions about spatial patterns, time trends, or other demographic factors.]
+To what extent is it possible to most-completely overcome algorithmic bias?
+How much does the confidence TRULY increase at a scale such as county as compared to tracts without continuing to miss the same overlooked, marginalized groups?
 
 # Technical Notes
 
 **Data Sources:** 
 - U.S. Census Bureau, American Community Survey 2018-2022 5-Year Estimates
-- Retrieved via tidycensus R package on [date]
+- Retrieved via tidycensus R package on in February 2026
 
 **Reproducibility:** 
-- All analysis conducted in R version [your version]
+- All analysis conducted in R version 2025.05.01+513
 - Census API key required for replication
-- Complete code and documentation available at: [your portfolio URL]
+- Complete code and documentation available at: https://mamole27.github.io/PPA_Portfolio/
 
 **Methodology Notes:**
-[Describe any decisions you made about data processing, county selection, or analytical choices that might affect reproducibility]
+Thresholds and parameters followed explicitly given guidelines in this assignment.
 
 **Limitations:**
-[Note any limitations in your analysis - sample size issues, geographic scope, temporal factors, etc.]
+Analysis based on a small selection of counties for no particular reason.
 
 ---
 
@@ -502,12 +530,12 @@ In further pattern analysis, Black & Hispanic tracts have significantly more fla
 
 Before submitting your portfolio link on Canvas:
 
-- [ ] All code chunks run without errors
-- [ ] All "[Fill this in]" prompts have been completed
-- [ ] Tables are properly formatted and readable
-- [ ] Executive summary addresses all four required components
+- [x] All code chunks run without errors
+- [x] All "[Fill this in]" prompts have been completed
+- [x] Tables are properly formatted and readable
+- [x] Executive summary addresses all four required components
 - [ ] Portfolio navigation includes this assignment
-- [ ] Census API key is properly set 
+- [x] Census API key is properly set 
 - [ ] Document renders correctly to HTML
 
 **Remember:** Submit your portfolio URL on Canvas, not the file itself. Your assignment should be accessible at `your-portfolio-url/labs/lab_1/your_file_name.html`
