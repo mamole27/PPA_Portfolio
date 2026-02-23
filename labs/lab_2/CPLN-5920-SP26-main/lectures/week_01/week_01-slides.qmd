@@ -1,0 +1,775 @@
+---
+title: "Welcome to CPLN 5920/MUSA 5080"
+subtitle: "Public Policy Analytics"
+author: "Allison Lassiter"
+date: "January 19, 2026"
+format: 
+  revealjs:
+    theme: simple
+    slide-number: true
+    chalkboard: true
+    code-line-numbers: true
+    incremental: false
+---
+
+# Today's Agenda
+
+## Part 1: Course Overview
+- **What you'll learn** - concepts
+- **How you'll learn it** - the course structure
+- **The tools we'll use** - software
+
+## Part 2: GitHub & Version Control
+- **Git fundamentals** for data science
+- **GitHub Classroom** workflow
+- **Collaborative coding** practices
+
+## Part 3: Reproducible Research Tools
+- **Quarto** for professional documentation
+- **Markdown** basics for clear communication
+- **RStudio settings** for reproducibility
+
+## Part 4: R Project Workflow
+- **Project organization** best practices
+- **File management** and relative paths
+- **Weekly workflow** you'll follow all semester
+
+## Part 5: Data Analysis with tidyverse
+- **dplyr fundamentals** and function patterns
+- **Pipes** for readable code
+- **group_by() and summarize()** for policy analysis
+
+## Part 6: Hands-On Setup
+- **Portfolio repository** creation
+- **Live demonstration** of complete workflow
+- **Your first analysis** in professional format
+
+---
+
+# Course Overview
+
+## What This Course Is About
+
+- **Advanced spatial analysis** for urban planning and public policy
+- **Data science tools** within policy context
+- **Focus on understanding concepts** rather than just completing code
+- **Professional portfolio development** using modern tools
+
+## Unlike Private Sector Data Science
+
+- Public sector is rarely about optimization
+- **Public goods, governance, equity** considerations
+- **Transparency and interpretability** are crucial
+- **Algorithmic bias** has real consequences for communities
+
+## Course structure
+- Our weekly meetings will be part lecture, part lab
+- You complete: 
+  - 5 lab assignments (individual)
+  - Mid-term, final (group projects)
+- Syllabus on Canvas and github
+
+## Assignment weighting
+
+**Problem:** AI tools make it easy to complete code without understanding
+
+**Solution:**
+
+- **35%: 10 weekly in-class quizzes** (test conceptual understanding)
+- **25%: 5 lab assignments** (focus on learning)
+- **GitHub-based workflow** (professional skills)
+
+## The Tools We'll Use
+
+**GitHub:** Industry standard for version control and collaboration
+
+**Quarto:** Modern approach to reproducible research and documentation
+
+**R:** Powerful for spatial analysis and policy-focused statistics
+
+## Professional Development
+
+These aren't just "class tools" - they're **career tools**:
+
+- **Portfolio employers can see**
+- **Version control skills** for any data job
+- **Professional documentation** practices
+
+---
+
+# GitHub Fundamentals
+
+## What is Git?
+
+**Version control system** that tracks changes in files
+
+Think of it as:
+
+- **"Track changes" for code projects**
+- **Time machine** for your work
+- **Collaboration tool** for teams
+
+## What is GitHub?
+
+**Cloud hosting** for Git repositories
+
+- **Backup** your work in the cloud  
+- **Share** projects with others
+- **Deploy websites** (like our portfolios)
+- **Collaborate** on code projects
+
+## Key GitHub Concepts
+
+**Repository (repo):** Folder containing your project files
+
+**Commit:** Snapshot of your work at a point in time
+
+**Push:** Send your changes to GitHub cloud
+
+**Pull:** Get latest changes from GitHub cloud
+
+**Clone:** Local copy of your repo
+
+
+## GitHub in This Course
+
+**Your workflow each week:**
+
+```text
+1. Edit files in RStudio
+2. Commit changes with descriptive message  
+3. Push to GitHub
+4. Your portfolio website updates automatically
+```
+
+This becomes second nature by mid-semester!
+
+
+---
+
+# Quarto Introduction
+
+## What is Quarto?
+
+**Publishing system** that combines:
+
+- Code (R, Python, etc.)
+- Text (explanations, analysis)
+- Output (plots, tables, results)
+
+**Into professional documents**
+
+## Why Quarto?
+
+**Reproducible research:**
+
+- Code and explanation in one place
+- Others can re-run your analysis
+- Professional presentation
+
+**Career relevance:**
+
+- Industry standard for data science communication
+- Creates websites, PDFs, presentations
+- Used at major tech companies and government agencies
+
+## Quarto vs. R Markdown
+
+If you know R Markdown:
+
+- Quarto is the "next generation"
+- Better website creation
+- Works with multiple programming languages
+- Same basic concept, improved features
+
+## Quarto Document Structure
+
+YAML header:
+```yaml
+---
+title: "My Analysis" 
+author: "Your Name"
+date: today
+format: html
+---
+```
+
+R code chunk:
+```r
+library(tidyverse)
+data <- read_csv("data/car_sales_data.csv")
+```
+
+---
+
+# Markdown Basics
+
+## Text Formatting
+- Markdown is a "markup language"
+- You will use this in Quarto and GitHub
+- It is also used in many other places (e.g., Wiki, Notion, Slack) 
+
+```markdown
+**Bold text**
+*Italic text*
+***Bold and italic***
+`code text`
+~~Strikethrough~~
+```
+
+**Bold text**  
+*Italic text*  
+***Bold and italic***  
+`code text`  
+~~Strikethrough~~
+
+## Headers
+
+```markdown
+# Main Header
+## Section Header  
+### Subsection Header
+```
+
+Use headers to organize your analysis sections.
+
+## Lists
+
+```markdown
+## Unordered List
+- Item 1
+- Item 2
+  - Sub-item A
+  - Sub-item B
+
+## Ordered List  
+1. First item
+2. Second item
+3. Third item
+```
+
+## Links and Images
+
+```markdown
+[Link text](https://example.com)
+[Link to another page](about.qmd)
+![Alt text](path/to/image.png)
+```
+
+Essential for professional portfolios:
+
+- Link to data sources
+- Reference course materials  
+- Include relevant images/plots
+
+---
+
+# R recap
+
+## Why R for Policy Analysis?
+
+- **Free and open source**
+- **Excellent for spatial data** 
+- **Strong statistical capabilities**
+- **Large community** in urban planning/policy
+- **Reproducible research** workflows
+
+
+
+---
+
+# R Project Workflow
+
+## RStudio Projects: Essential Habit
+
+**Always work within projects** for:
+
+- **Organized file structure** - data, scripts, outputs in one place
+- **Relative file paths** - `"data/cars.csv"` works for everyone  
+- **Version control integration** - Git works seamlessly
+- **Reproducible workflow** - others can run your code
+
+**Professional standard** - employers expect this!
+
+## Project Benefits for This Course
+
+```r
+# This works reliably in projects:
+car_data <- read_csv("data/car_sales_data.csv")
+
+# This breaks when shared:
+car_data <- read_csv("/Users/yourname/Desktop/cars.csv")
+```
+
+**We'll work in projects all semester** - builds good habits!
+
+
+## Creating Your Project
+
+**Step 1: Clone your GitHub repository**
+- You can clone in GitHub desktop or through the terminal in RStudio
+- GitHub desktop is easier at first, but terminal is faster once you learn how
+
+```bash
+git clone https://github.com/username/cpln5920-portfolio.git
+cd cpln5920-portfolio
+```
+
+**Step 2: Open in RStudio**
+
+- Open RStudio
+- File → Open Project
+- Navigate to your cloned folder
+- Select the `.Rproj` file
+
+## Project File Structure
+
+**Organized structure from day one:**
+
+```text
+cpln5920-portfolio/
+├── .Rproj
+├── .gitignore
+├── data/
+│   ├── raw/
+│   └── processed/
+├── scripts/
+├── docs/
+├── outputs/
+│   ├── figures/
+│   └── tables/
+└── week01/
+    ├── index.qmd
+    └── data/
+```
+
+## Why This Structure Matters
+
+**Professional habit:**
+
+- **Anyone can understand** your project layout
+- **Scripts know where to find** data files
+- **Easy to maintain** as projects grow
+- **Industry standard** for data science teams
+
+
+## File Naming Conventions
+
+**Be consistent and descriptive:**
+
+```text
+# Good examples:
+week01_exploratory_analysis.qmd
+2025-09-08_census_data_cleaning.R
+philadelphia_housing_2020-2024.csv
+
+# Avoid these:
+analysis.qmd
+temp.R
+data.csv
+new_version_final.qmd
+new_version_final2_final_final.qmd
+
+```
+
+## Working with Data Files
+
+**Best practices for this course:**
+
+```r
+# Raw data (never edit these!)
+raw_census <- read_csv(here("data", "raw", "acs_2022_philadelphia.csv"))
+
+# Process and save cleaned versions
+clean_census <- raw_census %>%
+  clean_names() %>%
+  filter(!is.na(median_income))
+
+write_csv(clean_census, here("data", "processed", "acs_2022_clean.csv"))
+
+# Use processed data in analysis
+analysis_data <- read_csv(here("data", "processed", "acs_2022_clean.csv"))
+```
+
+## RStudio Settings for Reproducibility
+
+**Critical settings to change RIGHT NOW:**
+
+**Tools → Global Options → General:**
+
+- **Uncheck** "Restore most recently opened project at startup"
+- **Uncheck** "Restore previously opened source documents"
+
+**Tools → Global Options → Workspace:**
+
+- **Uncheck** "Restore .RData into workspace at startup"  
+- **Set** "Save workspace to .RData on exit" to **"Never"**
+
+## Why These Settings Matter
+
+**Without these changes:**
+
+- Old objects stick around between sessions
+- Code appears to work but fails for others
+- Hidden dependencies break reproducibility
+- **Your portfolio assignments might not run for TAs!**
+
+**With these settings:**
+
+- Fresh environment every time
+- Code must be complete and self-contained
+- True reproducibility
+- Professional habits from day one
+
+## Managing R Environment
+
+**Keep your environment clean:**
+
+```r
+# Start each session fresh
+rm(list = ls())
+
+# Use projects instead of setwd()
+# NEVER use setwd() in your code!
+
+# Check your working directory
+getwd()  # Should be your project root
+
+# Use here() for all file paths
+here("data", "my_file.csv")
+```
+
+---
+
+# tidyverse Philosophy
+
+**Collection of packages** designed for data science:
+
+- **Consistent syntax** across functions
+- **Readable code** that tells a story
+- **Efficient workflows** for common tasks
+
+## Tibbles vs Data Frames
+
+**Tidyverse uses "tibbles"** - enhanced data frames:
+
+```r
+# Traditional data frame
+class(data)
+# [1] "data.frame"
+
+# Convert to tibble  
+car_data <- as_tibble(data)
+class(car_data)
+# [1] "tbl_df" "tbl" "data.frame"
+```
+
+## Why Tibbles Are Better
+
+**Smarter printing:**
+
+- Shows first 10 rows by default
+- Displays column types
+- Fits nicely on screen
+
+**We'll see the difference with our car data...**
+
+## Essential dplyr Functions
+
+We'll use these constantly:
+
+- `select()` - choose columns
+- `filter()` - choose rows  
+- `mutate()` - create new variables
+- `summarize()` - calculate statistics
+- `group_by()` - operate on groups
+
+## dplyr Function Rules
+
+**All dplyr functions follow the same pattern:**
+
+1. **First argument is always a data frame**
+2. **Subsequent arguments describe which columns to operate on** (using variable names without quotes)
+3. **Output is always a new data frame**
+
+This consistency makes dplyr predictable and easy to learn!
+
+## Function Pattern Examples
+
+```r
+# Rule 1: Data frame first
+select(car_data, Manufacturer, Price)
+filter(car_data, Price > 20000)
+mutate(car_data, price_k = Price / 1000)
+
+# Rule 2: Column names without quotes
+select(car_data, Manufacturer, Model, Price)  # Not "Manufacturer"
+filter(car_data, Year >= 2020, Mileage < 50000)
+
+# Rule 3: Always returns a new data frame
+new_data <- select(car_data, Manufacturer, Price)
+# car_data is unchanged, new_data contains selected columns
+```
+
+## Live Demo: Basic dplyr
+
+```{r}
+#| eval: false
+
+library(tidyverse)
+
+# Load car sales data
+car_data <- read_csv("data/car_sales_data.csv")
+
+# Basic exploration
+glimpse(car_data)
+names(car_data)
+```
+
+## Data Manipulation Pipeline
+
+**Pipes (`%>%`) are the magic of dplyr:**
+
+```r
+# The power of pipes - read as "then"
+car_summary <- data %>%
+  filter(`Year of manufacture` >= 2020) %>%      # Recent models only
+  select(Manufacturer, Model, Price, Mileage) %>% # Key variables
+  mutate(price_k = Price / 1000) %>%             # Convert to thousands
+  filter(Mileage < 50000) %>%                    # Low mileage cars
+  group_by(Manufacturer) %>%                     # Group by brand
+  summarize(                                     # Calculate statistics
+    avg_price = mean(price_k, na.rm = TRUE),
+    count = n()
+  )
+```
+
+## Understanding Pipes
+
+**What is `%>%`?**
+
+- Takes the output from the left side
+- Feeds it as the **first argument** to the function on the right side
+- Think: "and then..."
+
+**Without pipes (nested functions):**
+```r
+# Hard to read - inside out!
+car_summary <- summarize(
+  group_by(
+    filter(
+      mutate(
+        select(filter(data, `Year of manufacture` >= 2020), 
+               Manufacturer, Model, Price, Mileage),
+        price_k = Price / 1000),
+      Mileage < 50000),
+    Manufacturer),
+  avg_price = mean(price_k, na.rm = TRUE),
+  count = n()
+)
+```
+
+## Without Pipes (Multiple Objects)
+
+**Alternative: create many intermediate objects**
+```r
+# Clutters your environment
+recent_cars <- filter(data, `Year of manufacture` >= 2020)
+key_vars <- select(recent_cars, Manufacturer, Model, Price, Mileage)
+price_thousands <- mutate(key_vars, price_k = Price / 1000)
+low_mileage <- filter(price_thousands, Mileage < 50000)
+grouped_cars <- group_by(low_mileage, Manufacturer)
+car_summary <- summarize(grouped_cars, 
+                        avg_price = mean(price_k, na.rm = TRUE),
+                        count = n())
+```
+
+**Problems:** Lots of temporary objects, hard to follow the logic
+
+## Why Pipes Are Better
+
+**Readable:** Follow the logical flow of analysis
+
+**Efficient:** No temporary objects cluttering environment
+
+**Debuggable:** Easy to run line-by-line
+
+**Professional:** Industry standard for data science
+
+## Reading Pipes Aloud
+
+```r
+car_data %>%
+  filter(Price > 15000) %>%
+  select(Manufacturer, Price) %>%
+  group_by(Manufacturer) %>%
+  summarize(avg_price = mean(Price))
+```
+
+**Read as:**
+
+"Take car_data, **then** filter for cars over $15,000, **then** select manufacturer and price columns, **then** group by manufacturer, **then** calculate average price"
+
+## Understanding group_by() and summarize()
+
+**These functions work as a team:**
+
+- `group_by()` - **sets up grouping** for subsequent operations
+- `summarize()` - **collapses rows** into summary statistics
+
+## How group_by() Works
+
+```r
+# group_by() doesn't change what you see...
+car_data %>% 
+  group_by(Manufacturer)
+
+# ...but it sets up invisible grouping for next operations
+# Look for: "Groups: Manufacturer [5]" in the output
+```
+
+**Key insight:** `group_by()` **prepares** the data, doesn't transform it yet
+
+## How summarize() Works
+
+```r
+# Without grouping - one row of results
+car_data %>%
+  summarize(
+    avg_price = mean(Price, na.rm = TRUE),
+    total_cars = n()
+  )
+# Result: 1 row with overall averages
+
+# With grouping - one row per group
+car_data %>%
+  group_by(Manufacturer) %>%
+  summarize(
+    avg_price = mean(Price, na.rm = TRUE),
+    total_cars = n()
+  )
+# Result: 5 rows (one per manufacturer)
+```
+
+## Before and After Example
+
+**Original data (imagine this):**
+```
+Manufacturer  Price   Mileage
+Toyota       25000    30000
+Toyota       28000    15000  
+Honda        22000    45000
+Honda        30000    20000
+Ford         35000    10000
+```
+
+**After group_by(Manufacturer) %>% summarize(...):**
+```
+Manufacturer  avg_price  total_cars
+Toyota       26500      2
+Honda        26000      2  
+Ford         35000      1
+```
+
+## Common summarize() Functions
+
+**Essential summary functions:**
+```r
+car_data %>%
+  group_by(Manufacturer) %>%
+  summarize(
+    count = n(),                          # Number of rows
+    avg_price = mean(Price, na.rm = TRUE), # Average
+    med_price = median(Price, na.rm = TRUE), # Median  
+    min_price = min(Price, na.rm = TRUE),   # Minimum
+    max_price = max(Price, na.rm = TRUE),   # Maximum
+    std_dev = sd(Price, na.rm = TRUE)       # Standard deviation
+  )
+```
+
+## Policy Analysis Applications
+
+**Perfect for policy questions like:**
+
+- Average household income **by neighborhood**
+- Crime rates **by police district**  
+- Housing prices **by year**
+- Transportation usage **by demographic group**
+- Educational outcomes **by school district**
+
+**Pattern:** `group_by(category) %>% summarize(metric)`
+
+---
+
+# Recap on Course Structure
+
+## Weekly Pattern
+
+**Tuesday Class:**
+- New concepts and methods
+- Hands-on coding practice
+- Lab work with TA support
+
+**During Week:**
+- Complete portfolio assignments
+- Weekly notes and reflection
+- Office hours for help
+
+## Assessment Philosophy
+
+**Focus on understanding, not perfect code:**
+
+- **Weekly quizzes** test concepts
+- **Low stakes labs** encourage experimentation
+- **Professional development** throughout
+
+## Portfolio Development
+
+**Your GitHub portfolio will include:**
+
+- Completed lab analyses
+- Professional documentation
+- Work you can show employers
+
+---
+
+# Getting Started Today
+
+## Portfolio Setup Process
+
+1. **Accept GitHub Classroom assignment**
+2. **Clone repository to your computer**  
+3. **Customize with your information**
+4. **Enable GitHub Pages**
+5. **Complete first analysis**
+
+## What We'll Accomplish
+
+By end of today:
+
+- **Working portfolio repository**
+- **Live website** with your work
+- **First R analysis** in professional format
+- **Familiarity with workflow**
+
+## Support Available
+
+- **Allison and Zhanchao** circulating during hands-on time
+- **Office hours** starting this week
+- **Canvas discussion** for course questions
+
+---
+
+# Questions?
+
+## Ready to Get Started?
+
+**Next:** Portfolio setup + Lab 0
+
+**Remember:** This is a learning process - ask for help when you need it!
+
+---
+
+# Live Demo: Portfolio Setup
+
+*[Switch to live demonstration of GitHub workflow]*
