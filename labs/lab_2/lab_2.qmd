@@ -476,8 +476,6 @@ Create a choropleth map showing healthcare access challenges at the county level
 #| results: 'hide'
 
 # Create county-level access map
-
-#make counties and hospitals same CRS for plot
 county_map <- pa_counties %>%
   st_transform(4326) %>%
   left_join(
@@ -537,6 +535,23 @@ Create a map highlighting underserved vulnerable tracts.
 #| results: 'hide'
 
 # Create detailed tract-level map
+#from above, for render purposes
+county_map <- pa_counties %>%
+  st_transform(4326) %>%
+  left_join(
+    county_summary %>%
+      mutate(county_fips3 = substr(county_fips, 3, 5)) %>%  # drop the 42
+      select(county_fips3, pct_underserved),
+    by = c("FIPS_COUNT" = "county_fips3")
+  )
+hospitals_map <- hospitals %>%
+  st_transform(4326)
+county_map <- county_map %>%
+  mutate(underserved_category = case_when(
+    is.na(pct_underserved) ~ "No data",
+    pct_underserved == 0 ~ "0%",
+    pct_underserved > 0 ~ ">0%"
+  ))
 
 #make vulnerable tracts match plotting CRS WGS84
 vulnerable_map <- vulnerable_proj %>%
@@ -551,10 +566,10 @@ vulnerable_map <- vulnerable_proj %>%
 ggplot() +
   geom_sf(data = county_map, fill = NA, color = "grey90", size = 0.3) +
   geom_sf(data = filter(vulnerable_map, underserved_category == "Vulnerable"),
-          fill = "lightcyan", color = "grey50", size = 0.1) +
+          fill = "lightblue", color = "lightblue4", size = 0.1) +
   geom_sf(data = filter(vulnerable_map, underserved_category == "Underserved"),
           fill = "cyan4", color = "darkslategrey", size = 0.2, alpha = 0.7) +
-  geom_sf(data = hospitals_map, shape = 21, color = "black", fill = "violetred4", size = 2, alpha = 0.7) +
+  geom_sf(data = hospitals_map, shape = 21, color = "black", fill = "violetred4", size = 1.25, alpha = 0.5) +
   labs(
     title = "Underserved Vulnerable Tracts in Pennsylvania",
     subtitle = "Dark blue tracts are >15 miles from nearest hospital; hospitals shown as points",

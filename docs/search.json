@@ -354,7 +354,7 @@
     "href": "labs/lab_2/lab_2.html#part-2-comprehensive-visualization",
     "title": "Lab 2: Spatial Analysis and Visualization",
     "section": "Part 2: Comprehensive Visualization",
-    "text": "Part 2: Comprehensive Visualization\nUsing the skills from Week 3 (Data Visualization), create publication-quality maps and charts.\n\nMap 1: County-Level Choropleth\nCreate a choropleth map showing healthcare access challenges at the county level.\nYour Task:\n\n# Create county-level access map\n\n#make counties and hospitals same CRS for plot\ncounty_map &lt;- pa_counties %&gt;%\n  st_transform(4326) %&gt;%\n  left_join(\n    county_summary %&gt;%\n      mutate(county_fips3 = substr(county_fips, 3, 5)) %&gt;%  # drop the 42\n      select(county_fips3, pct_underserved),\n    by = c(\"FIPS_COUNT\" = \"county_fips3\")\n  )\n\nhospitals_map &lt;- hospitals %&gt;%\n  st_transform(4326)\n\ncounty_map &lt;- county_map %&gt;%\n  mutate(underserved_category = case_when(\n    is.na(pct_underserved) ~ \"No data\",\n    pct_underserved == 0 ~ \"0%\",\n    pct_underserved &gt; 0 ~ \"&gt;0%\"\n  ))\n\n#choropleth with hospital points\nggplot() +\n  geom_sf(data = county_map, aes(fill = underserved_category), color = \"white\", size = 0.3) +\n  geom_sf(data = hospitals_map, shape = 21, color = \"black\", fill = \"violetred4\", size = 2, alpha = 0.7) +\n  scale_fill_manual(\n    values = c(\"0%\" = \"lightblue\", \"&gt;0%\" = \"lightskyblue4\", \"No data\" = \"grey90\"),\n    name = \"% Vulnerable Tracts Underserved\"\n  ) +\n  theme_void() +\n  labs(\n    title = \"Healthcare Access Challenges in Pennsylvania\",\n    subtitle = \"Counties colored by % of vulnerable tracts &gt;15 miles from nearest hospital\",\n    caption = \"Hospital locations shown as pink points. Vulnerable tracts are 25%+ elderly and low-income (&lt;= $45k) populations.\"\n  )\n\n\n\n\n\n\n\n\nRequirements: - Fill counties by percentage of vulnerable tracts that are underserved - Include hospital locations as points - Use an appropriate color scheme - Include clear title, subtitle, and caption - Use theme_void() or similar clean theme - Add a legend with formatted labels\n\n\n\nMap 2: Detailed Vulnerability Map\nCreate a map highlighting underserved vulnerable tracts.\nYour Task:\n\n# Create detailed tract-level map\n\n#make vulnerable tracts match plotting CRS WGS84\nvulnerable_map &lt;- vulnerable_proj %&gt;%\n  st_transform(4326) %&gt;%\n  mutate(underserved_category = case_when(\n    is.na(underserved) ~ \"Not vulnerable\",\n    underserved == TRUE ~ \"Underserved\",\n    TRUE ~ \"Vulnerable\"\n  ))\n\n#tract-level map\nggplot() +\n  geom_sf(data = county_map, fill = NA, color = \"grey90\", size = 0.3) +\n  geom_sf(data = filter(vulnerable_map, underserved_category == \"Vulnerable\"),\n          fill = \"lightcyan\", color = \"grey50\", size = 0.1) +\n  geom_sf(data = filter(vulnerable_map, underserved_category == \"Underserved\"),\n          fill = \"cyan4\", color = \"darkslategrey\", size = 0.2, alpha = 0.7) +\n  geom_sf(data = hospitals_map, shape = 21, color = \"black\", fill = \"violetred4\", size = 2, alpha = 0.7) +\n  labs(\n    title = \"Underserved Vulnerable Tracts in Pennsylvania\",\n    subtitle = \"Dark blue tracts are &gt;15 miles from nearest hospital; hospitals shown as points\",\n    caption = \"Counties shown as grey outlines. Vulnerable tracts are 25%+ elderly and low-income populations.\"\n  ) +\n  theme_void() +\n  theme(\n    legend.position = \"none\",\n    plot.title = element_text(face = \"bold\", size = 16),\n    plot.subtitle = element_text(size = 12),\n    plot.caption = element_text(size = 10)\n  )\n\n\n\n\n\n\n\n\nRequirements: - Show underserved vulnerable tracts in a contrasting color - Include county boundaries for context - Show hospital locations - Use appropriate visual hierarchy (what should stand out?) - Include informative title and subtitle\n\n\n\nChart: Distribution Analysis\nCreate a visualization showing the distribution of distances to hospitals for vulnerable populations.\nYour Task:\n\n# Create distribution visualization\n\n#| message: false\n#| warning: false\n#| results: 'hide'\n\n#histogram with 1 mile bins\n\nggplot(vulnerable_proj, aes(x = nearest_hospital_miles)) +\n  geom_histogram(\n    binwidth = 1,                 \n    fill = \"lightblue\",\n    color = \"grey40\",\n    alpha = 0.8\n  ) +\n  geom_vline(\n    xintercept = 15,              \n    linetype = \"dashed\",\n    color = \"magenta3\",\n    linewidth = 1\n  ) +\n  labs(\n    title = \"Distribution of Distances to Nearest Hospital\",\n    subtitle = \"Vulnerable Census Tracts in Pennsylvania\",\n    x = \"Distance to Nearest Hospital (miles)\",\n    y = \"Number of Vulnerable Tracts\",\n    caption = \"Pink dashed line indicates 15-mile threshold after which tracts are considered to be underserved\"\n  ) +\n  theme_minimal() +\n  theme(\n    plot.title = element_text(face = \"bold\", size = 14),\n    plot.subtitle = element_text(size = 12),\n    plot.caption = element_text(size = 10)\n  )\n\n\n\n\n\n\n\n\nRequirements: - Clear axes labels with units - Appropriate title - Professional formatting - Brief interpretation (1-2 sentences as a caption or in text)"
+    "text": "Part 2: Comprehensive Visualization\nUsing the skills from Week 3 (Data Visualization), create publication-quality maps and charts.\n\nMap 1: County-Level Choropleth\nCreate a choropleth map showing healthcare access challenges at the county level.\nYour Task:\n\n# Create county-level access map\ncounty_map &lt;- pa_counties %&gt;%\n  st_transform(4326) %&gt;%\n  left_join(\n    county_summary %&gt;%\n      mutate(county_fips3 = substr(county_fips, 3, 5)) %&gt;%  # drop the 42\n      select(county_fips3, pct_underserved),\n    by = c(\"FIPS_COUNT\" = \"county_fips3\")\n  )\n\nhospitals_map &lt;- hospitals %&gt;%\n  st_transform(4326)\n\ncounty_map &lt;- county_map %&gt;%\n  mutate(underserved_category = case_when(\n    is.na(pct_underserved) ~ \"No data\",\n    pct_underserved == 0 ~ \"0%\",\n    pct_underserved &gt; 0 ~ \"&gt;0%\"\n  ))\n\n#choropleth with hospital points\nggplot() +\n  geom_sf(data = county_map, aes(fill = underserved_category), color = \"white\", size = 0.3) +\n  geom_sf(data = hospitals_map, shape = 21, color = \"black\", fill = \"violetred4\", size = 2, alpha = 0.7) +\n  scale_fill_manual(\n    values = c(\"0%\" = \"lightblue\", \"&gt;0%\" = \"lightskyblue4\", \"No data\" = \"grey90\"),\n    name = \"% Vulnerable Tracts Underserved\"\n  ) +\n  theme_void() +\n  labs(\n    title = \"Healthcare Access Challenges in Pennsylvania\",\n    subtitle = \"Counties colored by % of vulnerable tracts &gt;15 miles from nearest hospital\",\n    caption = \"Hospital locations shown as pink points. Vulnerable tracts are 25%+ elderly and low-income (&lt;= $45k) populations.\"\n  )\n\n\n\n\n\n\n\n\nRequirements: - Fill counties by percentage of vulnerable tracts that are underserved - Include hospital locations as points - Use an appropriate color scheme - Include clear title, subtitle, and caption - Use theme_void() or similar clean theme - Add a legend with formatted labels\n\n\n\nMap 2: Detailed Vulnerability Map\nCreate a map highlighting underserved vulnerable tracts.\nYour Task:\n\n# Create detailed tract-level map\n#from above, for render purposes\ncounty_map &lt;- pa_counties %&gt;%\n  st_transform(4326) %&gt;%\n  left_join(\n    county_summary %&gt;%\n      mutate(county_fips3 = substr(county_fips, 3, 5)) %&gt;%  # drop the 42\n      select(county_fips3, pct_underserved),\n    by = c(\"FIPS_COUNT\" = \"county_fips3\")\n  )\nhospitals_map &lt;- hospitals %&gt;%\n  st_transform(4326)\ncounty_map &lt;- county_map %&gt;%\n  mutate(underserved_category = case_when(\n    is.na(pct_underserved) ~ \"No data\",\n    pct_underserved == 0 ~ \"0%\",\n    pct_underserved &gt; 0 ~ \"&gt;0%\"\n  ))\n\n#make vulnerable tracts match plotting CRS WGS84\nvulnerable_map &lt;- vulnerable_proj %&gt;%\n  st_transform(4326) %&gt;%\n  mutate(underserved_category = case_when(\n    is.na(underserved) ~ \"Not vulnerable\",\n    underserved == TRUE ~ \"Underserved\",\n    TRUE ~ \"Vulnerable\"\n  ))\n\n#tract-level map\nggplot() +\n  geom_sf(data = county_map, fill = NA, color = \"grey90\", size = 0.3) +\n  geom_sf(data = filter(vulnerable_map, underserved_category == \"Vulnerable\"),\n          fill = \"lightblue\", color = \"lightblue4\", size = 0.1) +\n  geom_sf(data = filter(vulnerable_map, underserved_category == \"Underserved\"),\n          fill = \"cyan4\", color = \"darkslategrey\", size = 0.2, alpha = 0.7) +\n  geom_sf(data = hospitals_map, shape = 21, color = \"black\", fill = \"violetred4\", size = 1.25, alpha = 0.5) +\n  labs(\n    title = \"Underserved Vulnerable Tracts in Pennsylvania\",\n    subtitle = \"Dark blue tracts are &gt;15 miles from nearest hospital; hospitals shown as points\",\n    caption = \"Counties shown as grey outlines. Vulnerable tracts are 25%+ elderly and low-income populations.\"\n  ) +\n  theme_void() +\n  theme(\n    legend.position = \"none\",\n    plot.title = element_text(face = \"bold\", size = 16),\n    plot.subtitle = element_text(size = 12),\n    plot.caption = element_text(size = 10)\n  )\n\n\n\n\n\n\n\n\nRequirements: - Show underserved vulnerable tracts in a contrasting color - Include county boundaries for context - Show hospital locations - Use appropriate visual hierarchy (what should stand out?) - Include informative title and subtitle\n\n\n\nChart: Distribution Analysis\nCreate a visualization showing the distribution of distances to hospitals for vulnerable populations.\nYour Task:\n\n# Create distribution visualization\n\n#| message: false\n#| warning: false\n#| results: 'hide'\n\n#histogram with 1 mile bins\n\nggplot(vulnerable_proj, aes(x = nearest_hospital_miles)) +\n  geom_histogram(\n    binwidth = 1,                 \n    fill = \"lightblue\",\n    color = \"grey40\",\n    alpha = 0.8\n  ) +\n  geom_vline(\n    xintercept = 15,              \n    linetype = \"dashed\",\n    color = \"magenta3\",\n    linewidth = 1\n  ) +\n  labs(\n    title = \"Distribution of Distances to Nearest Hospital\",\n    subtitle = \"Vulnerable Census Tracts in Pennsylvania\",\n    x = \"Distance to Nearest Hospital (miles)\",\n    y = \"Number of Vulnerable Tracts\",\n    caption = \"Pink dashed line indicates 15-mile threshold after which tracts are considered to be underserved\"\n  ) +\n  theme_minimal() +\n  theme(\n    plot.title = element_text(face = \"bold\", size = 14),\n    plot.subtitle = element_text(size = 12),\n    plot.caption = element_text(size = 10)\n  )\n\n\n\n\n\n\n\n\nRequirements: - Clear axes labels with units - Appropriate title - Professional formatting - Brief interpretation (1-2 sentences as a caption or in text)"
   },
   {
     "objectID": "labs/lab_2/lab_2.html#part-3-bring-your-own-data-analysis",
@@ -369,5 +369,313 @@
     "title": "Lab 2: Spatial Analysis and Visualization",
     "section": "Finally - Feedback Incorporation!",
     "text": "Finally - Feedback Incorporation!\nIn this 2nd lab, I took more creative freedom in deleting unnecessary written elements directly from the assignment; in the first lab, I was hesitant to delete potentially necessary context or instructions, but after reading feedback understand that I can adjust these labs for my own portfolio. Additionally, I tried to make more frequent use of more formal table printing; I’m not sure that I had the issue (at least not frequently) of having just head() or glimpse(), but the reminder certainly made me aware to check! Thanks for your feedback–looking forward to continuing to strengthen my skills!"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html",
+    "href": "weeklynotes/week5-complete-slides.html",
+    "title": "Introduction to Linear Regression",
+    "section": "",
+    "text": "Scenario: You’re advising a state agency on resource allocation.\nSome counties have sparse data. Can you predict their median income using data from counties with better measurements?\nBroader question: How do we make informed predictions when we don’t have complete information?"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#the-general-problem",
+    "href": "weeklynotes/week5-complete-slides.html#the-general-problem",
+    "title": "Introduction to Linear Regression",
+    "section": "The General Problem",
+    "text": "The General Problem\nWe observe data: counties, income, population, education, etc.\nWe believe there’s some relationship between these variables.\nStatistical learning = a set of approaches for estimating that relationship"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#formalizing-the-relationship",
+    "href": "weeklynotes/week5-complete-slides.html#formalizing-the-relationship",
+    "title": "Introduction to Linear Regression",
+    "section": "Formalizing the Relationship",
+    "text": "Formalizing the Relationship\nFor any quantitative response Y and predictors X₁, X₂, … Xₚ:\n\\[Y = f(X) + \\epsilon\\]\nWhere:\n\nf = the systematic information X provides about Y\nε = random error (irreducible)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#what-is-f",
+    "href": "weeklynotes/week5-complete-slides.html#what-is-f",
+    "title": "Introduction to Linear Regression",
+    "section": "What is f?",
+    "text": "What is f?\nf represents the true relationship between predictors and outcome\n\nIt’s fixed but unknown\nIt’s what we’re trying to estimate\nDifferent X values produce different Y values through f\n\nExample:\n\nY = median income\nX = population, education, poverty rate\nf = the way these factors systematically relate to income"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#why-estimate-f",
+    "href": "weeklynotes/week5-complete-slides.html#why-estimate-f",
+    "title": "Introduction to Linear Regression",
+    "section": "Why Estimate f?",
+    "text": "Why Estimate f?\nTwo main reasons:\n1. Prediction\n\nEstimate Y for new observations\nDon’t necessarily care about the exact form of f\nFocus: accuracy of predictions\n\n2. Inference\n\nUnderstand how X affects Y\nWhich predictors matter?\nWhat’s the nature of the relationship?\nFocus: interpreting the model"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#how-do-we-estimate-f",
+    "href": "weeklynotes/week5-complete-slides.html#how-do-we-estimate-f",
+    "title": "Introduction to Linear Regression",
+    "section": "How Do We Estimate f?",
+    "text": "How Do We Estimate f?\nTwo broad approaches:\nParametric Methods\n\nMake an assumption about the functional form (e.g., linear)\nReduces problem to estimating a few parameters\nEasier to interpret\nThis is what we’ll focus on\n\nNon-Parametric Methods\n\nDon’t assume a specific form\nMore flexible\nRequire more data\nHarder to interpret"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#parametric-vs.-non-parametric",
+    "href": "weeklynotes/week5-complete-slides.html#parametric-vs.-non-parametric",
+    "title": "Introduction to Linear Regression",
+    "section": "Parametric vs. Non-Parametric",
+    "text": "Parametric vs. Non-Parametric\n\nKey difference:\n\nParametric (blue): We assume f is linear, then estimate β₀ and β₁\nNon-parametric (green): We let the data determine the shape of f\n\n\n\n\n\n\n\nNoteWhat about deep learning?\n\n\n\nNeural networks are technically parametric (millions of parameters!), but achieve flexibility through parameter quantity rather than assuming a rigid form. We won’t cover them in this course, but they follow the same Y = f(X) + ε framework."
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#parametric-approach-linear-regression",
+    "href": "weeklynotes/week5-complete-slides.html#parametric-approach-linear-regression",
+    "title": "Introduction to Linear Regression",
+    "section": "Parametric Approach: Linear Regression",
+    "text": "Parametric Approach: Linear Regression\nThe assumption: Relationship between X and Y is linear\n\\[Y \\approx \\beta_0 + \\beta_1X_1 + \\beta_2X_2 + ... + \\beta_pX_p\\]\nThe task: Estimate the β coefficients using our sample data\nThe method: Ordinary Least Squares (OLS)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#why-linear-regression",
+    "href": "weeklynotes/week5-complete-slides.html#why-linear-regression",
+    "title": "Introduction to Linear Regression",
+    "section": "Why Linear Regression?",
+    "text": "Why Linear Regression?\nAdvantages:\n\nSimple and interpretable\nWell-understood properties\nWorks remarkably well for many problems\nFoundation for more complex methods\n\nLimitations:\n\nAssumes linearity (we’ll test this)\nSensitive to outliers\nMakes several assumptions (we’ll check these)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#prediction-vs-inference",
+    "href": "weeklynotes/week5-complete-slides.html#prediction-vs-inference",
+    "title": "Introduction to Linear Regression",
+    "section": "Prediction vs Inference",
+    "text": "Prediction vs Inference\nThe same model serves different purposes:\n\n\nInference\n\n“Does education affect income?”\nFocus on coefficients\nStatistical significance matters\nUnderstand mechanisms\n\n\nPrediction\n\n“What’s County Y’s income?”\nFocus on accuracy\nPrediction intervals matter\nDon’t need to understand why\n\n\n\nToday: We’ll do both, but emphasize prediction"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#example-prediction",
+    "href": "weeklynotes/week5-complete-slides.html#example-prediction",
+    "title": "Introduction to Linear Regression",
+    "section": "Example: Prediction",
+    "text": "Example: Prediction\nGovernment use case:\nCensus misses people in hard-to-count areas. Can we predict:\n\nIncome for areas with poor survey response?\nPopulation for planning purposes?\nResource needs based on demographics?\n\nThe model doesn’t explain WHY these relationships exist, but if predictions are accurate, they can be useful for policy"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#example-inference",
+    "href": "weeklynotes/week5-complete-slides.html#example-inference",
+    "title": "Introduction to Linear Regression",
+    "section": "Example: Inference",
+    "text": "Example: Inference\nResearch use case:\nUnderstanding gentrification:\n\nWhich neighborhood characteristics explain income change?\nHow much does education matter vs. proximity to downtown?\nAre policy interventions associated with outcomes?\n\nHere we care about the coefficients and what they tell us about mechanisms"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#connection-to-week-2-algorithmic-bias",
+    "href": "weeklynotes/week5-complete-slides.html#connection-to-week-2-algorithmic-bias",
+    "title": "Introduction to Linear Regression",
+    "section": "Connection to Week 2: Algorithmic Bias",
+    "text": "Connection to Week 2: Algorithmic Bias\nRemember the healthcare algorithm that discriminated?\nThe model: Predicted healthcare needs using costs as proxy\nTechnically: Probably had good R², low prediction error (good “fit”)\nEthically: Learned and amplified existing discrimination\n\n\n\n\n\n\nImportantCritical Point\n\n\n\nA model can be statistically “good” while being ethically terrible for decision-making."
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#start-with-data-and-visualization",
+    "href": "weeklynotes/week5-complete-slides.html#start-with-data-and-visualization",
+    "title": "Introduction to Linear Regression",
+    "section": "Start with Data and Visualization",
+    "text": "Start with Data and Visualization\nLet’s apply these concepts to PA counties:\n\n\nGetting data from the 2018-2022 5-year ACS\n\n\n`geom_smooth()` using formula = 'y ~ x'"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#what-do-we-see",
+    "href": "weeklynotes/week5-complete-slides.html#what-do-we-see",
+    "title": "Introduction to Linear Regression",
+    "section": "What Do We See?",
+    "text": "What Do We See?\nBefore fitting any model, discuss the visualization:\n\nGenerally positive relationship\nConsiderable scatter (not deterministic)\nMost counties are small (clustered left)\nOne large county with surprisingly low income\nWider confidence band at higher populations\n\nQuestion: What does this tell us about f(X)?"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#fit-the-model",
+    "href": "weeklynotes/week5-complete-slides.html#fit-the-model",
+    "title": "Introduction to Linear Regression",
+    "section": "Fit the Model",
+    "text": "Fit the Model\n\n\nCode\nmodel1 &lt;- lm(median_incomeE ~ total_popE, data = pa_data)\nsummary(model1)\n\n\n\nCall:\nlm(formula = median_incomeE ~ total_popE, data = pa_data)\n\nResiduals:\n   Min     1Q Median     3Q    Max \n-39536  -6013  -1868   5075  44196 \n\nCoefficients:\n                Estimate   Std. Error t value             Pr(&gt;|t|)    \n(Intercept) 62855.819808  1760.477709  35.704 &lt; 0.0000000000000002 ***\ntotal_popE      0.021477     0.005192   4.137             0.000103 ***\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nResidual standard error: 11820 on 65 degrees of freedom\nMultiple R-squared:  0.2084,    Adjusted R-squared:  0.1962 \nF-statistic: 17.11 on 1 and 65 DF,  p-value: 0.0001032"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#interpreting-coefficients",
+    "href": "weeklynotes/week5-complete-slides.html#interpreting-coefficients",
+    "title": "Introduction to Linear Regression",
+    "section": "Interpreting Coefficients",
+    "text": "Interpreting Coefficients\nIntercept (β₀) = $62,855\n\nExpected income when population = 0\nNot usually meaningful in practice\n\nSlope (β₁) = $0.02\n\nFor each additional person, income increases by $0.02\nMore useful: For every 1,000 people, income increases by ~$20\n\nIs this relationship real?\n\nNull hypothesis is β₁ = 0 (population has no relationship to income) (Note: note, not testing causality, like “population has no effect on income”)\np-value &lt; 0.001 → Very unlikely to see this if true β₁ = 0\nWe can reject the null hypothesis"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#the-holy-grail-concept",
+    "href": "weeklynotes/week5-complete-slides.html#the-holy-grail-concept",
+    "title": "Introduction to Linear Regression",
+    "section": "The “Holy Grail” Concept",
+    "text": "The “Holy Grail” Concept\n\n\nOur estimates are just that: estimates of the true (unknown) parameters\nKey insight:\n\nRed line = true relationship (unknowable)\nBlue line = our estimate from this sample (n) of the total population (N)\nDifferent samples (n) of the same population (N) → slightly different blue lines\nStandard errors quantify this uncertainty"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#statistical-significance",
+    "href": "weeklynotes/week5-complete-slides.html#statistical-significance",
+    "title": "Introduction to Linear Regression",
+    "section": "Statistical Significance",
+    "text": "Statistical Significance\nThe logic:\n\nNull hypothesis (H₀): β₁ = 0 (no relationship)\nOur estimate: β₁ = 0.02\nQuestion: Could we get 0.02 just by chance if H₀ is true?\n\nt-statistic: How many standard errors away from 0?\n\nBigger |t| = more confidence the relationship is real\nRule of thumb: |t| &gt; 3 indicates strong evidence the relationship is real\n\np-value: Probability of seeing our estimate if H₀ is true\n\nSmall p → reject H₀, conclude relationship exists"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#how-good-is-this-model",
+    "href": "weeklynotes/week5-complete-slides.html#how-good-is-this-model",
+    "title": "Introduction to Linear Regression",
+    "section": "How Good is This Model?",
+    "text": "How Good is This Model?\nTwo key questions:\n\nHow well does it fit the data we used? (in-sample fit)\nHow well would it predict new data? (out-of-sample performance)\n\nThese are NOT the same thing!"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#in-sample-fit-r²",
+    "href": "weeklynotes/week5-complete-slides.html#in-sample-fit-r²",
+    "title": "Introduction to Linear Regression",
+    "section": "In-Sample Fit: R²",
+    "text": "In-Sample Fit: R²\nR² = 0.208\n“21% of variation in income is explained by population”\nIs this good?\n\nDepends on your goal!\nFor prediction: Moderate\nFor inference: Shows population matters, but other factors exist\n\nR² alone doesn’t tell us if the model is trustworthy"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#the-problem-overfitting",
+    "href": "weeklynotes/week5-complete-slides.html#the-problem-overfitting",
+    "title": "Introduction to Linear Regression",
+    "section": "The Problem: Overfitting",
+    "text": "The Problem: Overfitting\nThree scenarios:\n\nUnderfitting: Model too simple (high bias)\nGood fit: Captures pattern without noise\nOverfitting: Memorizes training data (high variance)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#overfitting-in-regression",
+    "href": "weeklynotes/week5-complete-slides.html#overfitting-in-regression",
+    "title": "Introduction to Linear Regression",
+    "section": "Overfitting in Regression",
+    "text": "Overfitting in Regression\n\n\nWarning: package 'patchwork' was built under R version 4.5.2\n\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nThe danger: High R² doesn’t mean good predictions!"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#traintest-split",
+    "href": "weeklynotes/week5-complete-slides.html#traintest-split",
+    "title": "Introduction to Linear Regression",
+    "section": "Train/Test Split",
+    "text": "Train/Test Split\nSolution: Hold out some data to test predictions\n\n\nCode\nset.seed(123)\nn &lt;- nrow(pa_data)\n\n# 70% training, 30% testing\ntrain_indices &lt;- sample(1:n, size = 0.7 * n)\ntrain_data &lt;- pa_data[train_indices, ]\ntest_data &lt;- pa_data[-train_indices, ]\n\n# Fit on training data only\nmodel_train &lt;- lm(median_incomeE ~ total_popE, data = train_data)\n\n# Predict on test data\ntest_predictions &lt;- predict(model_train, newdata = test_data)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#evaluate-predictions",
+    "href": "weeklynotes/week5-complete-slides.html#evaluate-predictions",
+    "title": "Introduction to Linear Regression",
+    "section": "Evaluate Predictions",
+    "text": "Evaluate Predictions\n\n\nCode\n# Calculate prediction error (RMSE)\nrmse_test &lt;- sqrt(mean((test_data$median_incomeE - test_predictions)^2))\nrmse_train &lt;- summary(model_train)$sigma\n\ncat(\"Training RMSE:\", round(rmse_train, 0), \"\\n\")\n\n\nTraining RMSE: 12893 \n\n\nCode\ncat(\"Test RMSE:\", round(rmse_test, 0), \"\\n\")\n\n\nTest RMSE: 9536 \n\n\n\n\n\n\n\n\nNoteInterpreting RMSE\n\n\n\nOn new data (test set), our predictions are off by ~$9,500 on average. Is this level of error acceptable for policy decisions?"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#cross-validation",
+    "href": "weeklynotes/week5-complete-slides.html#cross-validation",
+    "title": "Introduction to Linear Regression",
+    "section": "Cross-Validation",
+    "text": "Cross-Validation\nBetter approach: Multiple train/test splits\n\nGives more stable estimate of true prediction performance"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#cross-validation-in-action",
+    "href": "weeklynotes/week5-complete-slides.html#cross-validation-in-action",
+    "title": "Introduction to Linear Regression",
+    "section": "Cross-Validation in Action",
+    "text": "Cross-Validation in Action\n\n\nCode\nlibrary(caret)\n\n\nWarning: package 'caret' was built under R version 4.5.2\n\n\nLoading required package: lattice\n\n\n\nAttaching package: 'caret'\n\n\nThe following object is masked from 'package:purrr':\n\n    lift\n\n\nCode\n# 10-fold cross-validation\ntrain_control &lt;- trainControl(method = \"cv\", number = 10)\n\ncv_model &lt;- train(median_incomeE ~ total_popE,\n                  data = pa_data,\n                  method = \"lm\",\n                  trControl = train_control)\n\ncv_model$results\n\n\n  intercept     RMSE  Rsquared      MAE   RMSESD RsquaredSD    MAESD\n1      TRUE 12577.76 0.5643826 8859.865 5609.002  0.2997098 2238.042\n\n\nKey Metrics (Averaged Across 10 Folds)\n\nRMSE: Typical prediction error (~$12,578) - penalizes large errors more\nR²: % of variation explained (0.564)\nMAE: Average absolute error (~$8,860) - easier to interpret"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#when-can-we-trust-this-model",
+    "href": "weeklynotes/week5-complete-slides.html#when-can-we-trust-this-model",
+    "title": "Introduction to Linear Regression",
+    "section": "When Can We Trust This Model?",
+    "text": "When Can We Trust This Model?\nLinear regression makes assumptions. If violated:\n\nCoefficients may be biased\nStandard errors wrong\nPredictions unreliable\n\nWe must check diagnostics before trusting any model"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#assumption-1-linearity",
+    "href": "weeklynotes/week5-complete-slides.html#assumption-1-linearity",
+    "title": "Introduction to Linear Regression",
+    "section": "Assumption 1: Linearity",
+    "text": "Assumption 1: Linearity\nWhat we assume: Relationship is actually linear\nHow to check: Residual plot\n\n\nCode\npa_data$residuals &lt;- residuals(model1)\npa_data$fitted &lt;- fitted(model1)\n\nggplot(pa_data, aes(x = fitted, y = residuals)) +\n  geom_point() +\n  geom_hline(yintercept = 0, color = \"red\", linetype = \"dashed\") +\n  labs(title = \"Residual Plot\", x = \"Fitted Values\", y = \"Residuals\") +\n  theme_minimal()"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#reading-residual-plots",
+    "href": "weeklynotes/week5-complete-slides.html#reading-residual-plots",
+    "title": "Introduction to Linear Regression",
+    "section": "Reading Residual Plots",
+    "text": "Reading Residual Plots\n\n\nGood\n\nRandom scatter\nPoints around 0\nConstant spread\n\n\nBad\n\nCurved pattern\nModel missing something\nPredictions biased\n\n\n\n\n\n\n\n\n\nImportantWhy This Matters for Prediction\n\n\n\nLinearity violations hurt predictions, not just inference:\n\nIf the true relationship is curved and you fit a straight line, you’ll systematically underpredict in some regions and overpredict in others\nBiased predictions in predictable ways (not random errors!)\nResidual plots should show random scatter - any pattern means your model is missing something systematic"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#assumption-2-constant-variance",
+    "href": "weeklynotes/week5-complete-slides.html#assumption-2-constant-variance",
+    "title": "Introduction to Linear Regression",
+    "section": "Assumption 2: Constant Variance",
+    "text": "Assumption 2: Constant Variance\nHeteroscedasticity: Variance changes across X\nImpact: Standard errors are wrong → p-values misleading\n\n\n\n\n\n\nWarningWhat Heteroskedasticity Tells You\n\n\n\nOften a symptom of model misspecification:\n\nModel fits well for some values (e.g., small counties) but poorly for others (large counties)\nMay indicate missing variables that matter more at certain X values\nAsk: “What’s different about observations with large residuals?”\n\nExample: Population alone predicts income well in rural counties, but large urban counties need additional variables (education, industry) to predict accurately."
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#heteroskedasticity-visualized",
+    "href": "weeklynotes/week5-complete-slides.html#heteroskedasticity-visualized",
+    "title": "Introduction to Linear Regression",
+    "section": "Heteroskedasticity Visualized",
+    "text": "Heteroskedasticity Visualized\n\nKey Insight: Adding the right predictor can fix heteroscedasticity"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#formal-test-breusch-pagan",
+    "href": "weeklynotes/week5-complete-slides.html#formal-test-breusch-pagan",
+    "title": "Introduction to Linear Regression",
+    "section": "Formal Test: Breusch-Pagan",
+    "text": "Formal Test: Breusch-Pagan\n\n\nCode\nlibrary(lmtest)\n\n\nWarning: package 'lmtest' was built under R version 4.5.2\n\n\nLoading required package: zoo\n\n\nWarning: package 'zoo' was built under R version 4.5.2\n\n\n\nAttaching package: 'zoo'\n\n\nThe following objects are masked from 'package:base':\n\n    as.Date, as.Date.numeric\n\n\nCode\nbptest(model1)\n\n\n\n    studentized Breusch-Pagan test\n\ndata:  model1\nBP = 27.481, df = 1, p-value = 0.0000001587\n\n\nInterpretation:\n\np &gt; 0.05: Constant variance assumption OK\np &lt; 0.05: Evidence of heteroscedasticity\n\nIf detected, solutions:\n\nTransform Y (try log(income))\nRobust standard errors\nAdd missing variables\nAccept it (point predictions still OK for some prediction goals) – hetroscedasticity will affect predcition of the error, not the coefficients."
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#assumption-normality-of-residuals",
+    "href": "weeklynotes/week5-complete-slides.html#assumption-normality-of-residuals",
+    "title": "Introduction to Linear Regression",
+    "section": "Assumption: Normality of Residuals",
+    "text": "Assumption: Normality of Residuals\nWhat we assume: Residuals are normally distributed\nWhy it matters:\n\nLess critical for point predictions (unbiased regardless)\nImportant for confidence intervals and prediction intervals\nNeeded for valid hypothesis tests (t-tests, F-tests)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#assumption-3-no-multicollinearity",
+    "href": "weeklynotes/week5-complete-slides.html#assumption-3-no-multicollinearity",
+    "title": "Introduction to Linear Regression",
+    "section": "Assumption 3: No Multicollinearity",
+    "text": "Assumption 3: No Multicollinearity\nFor multiple regression: Predictors shouldn’t be too correlated\n\n\nCode\nlibrary(car)\n (model1)  # Variance Inflation Factor\n\n# Rule of thumb: VIF &gt; 10 suggests problems\n# Not relevant with only 1 predictor!\n\n\nWhy it matters: Coefficients become unstable, hard to interpret"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#assumption-4-no-influential-outliers",
+    "href": "weeklynotes/week5-complete-slides.html#assumption-4-no-influential-outliers",
+    "title": "Introduction to Linear Regression",
+    "section": "Assumption 4: No Influential Outliers",
+    "text": "Assumption 4: No Influential Outliers\nNot all outliers are problems - only those with high leverage AND large residuals\n\n\n\nVisual Diagnostic\n\n\n\n\n\n\n\n\n\n\n\n\nIdentify Influential Points\n\n\n# A tibble: 2 × 4\n  NAME                              total_popE median_incomeE cooks_d\n  &lt;chr&gt;                                  &lt;dbl&gt;          &lt;dbl&gt;   &lt;dbl&gt;\n1 Philadelphia County, Pennsylvania    1593208          57537   5.95 \n2 Allegheny County, Pennsylvania       1245310          72537   0.399\n\n\nInterpretation:\n\nCook’s D &gt; 4/n = potentially influential\nHigh leverage + large residual = pulls regression line"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#what-to-do-with-influential-points",
+    "href": "weeklynotes/week5-complete-slides.html#what-to-do-with-influential-points",
+    "title": "Introduction to Linear Regression",
+    "section": "What To Do With Influential Points",
+    "text": "What To Do With Influential Points\n\n\n\n\n\n\nTipInvestigation Strategy\n\n\n\n\nInvestigate: Why is this observation unusual? (data error? truly unique?)\nReport: Always note influential observations in your analysis\nSensitivity check: Refit model without them - do conclusions change?\nDon’t automatically remove: They might represent real, important cases\n\nFor policy: An influential county might need special attention, not exclusion!\n\n\n\n\n\n\n\n\nImportantConnection to Algorithmic Bias\n\n\n\nHigh-influence observations in demographic could represent marginalized communities or unique populations. Automatically removing them can erase important populations from analysis and lead to biased policy decisions.\nAlways investigate before removing!"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#adding-more-predictors",
+    "href": "weeklynotes/week5-complete-slides.html#adding-more-predictors",
+    "title": "Introduction to Linear Regression",
+    "section": "Adding More Predictors",
+    "text": "Adding More Predictors\nMaybe population alone isn’t enough:\n\n\nGetting data from the 2018-2022 5-year ACS\n\n\n\nCall:\nlm(formula = median_incomeE ~ total_popE + percent_collegeE + \n    poverty_rateE, data = pa_data_full)\n\nResiduals:\n   Min     1Q Median     3Q    Max \n-32939  -4473  -1098   3861  27672 \n\nCoefficients:\n                    Estimate  Std. Error t value             Pr(&gt;|t|)    \n(Intercept)      60893.86796  1589.24122  38.316 &lt; 0.0000000000000002 ***\ntotal_popE           0.06657     0.03356   1.984               0.0517 .  \npercent_collegeE     0.04710     0.14916   0.316               0.7532    \npoverty_rateE       -0.36503     0.07749  -4.711             0.000014 ***\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nResidual standard error: 8610 on 63 degrees of freedom\nMultiple R-squared:  0.5931,    Adjusted R-squared:  0.5738 \nF-statistic: 30.61 on 3 and 63 DF,  p-value: 0.000000000002485"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#log-transformations",
+    "href": "weeklynotes/week5-complete-slides.html#log-transformations",
+    "title": "Introduction to Linear Regression",
+    "section": "Log Transformations",
+    "text": "Log Transformations\nIf relationship is curved, try transforming:\n\n\nCode\n# Compare linear vs log\nmodel_linear &lt;- lm(median_incomeE ~ total_popE, data = pa_data)\nmodel_log &lt;- lm(median_incomeE ~ log(total_popE), data = pa_data)\n\nsummary(model_log)\n\n\n\nCall:\nlm(formula = median_incomeE ~ log(total_popE), data = pa_data)\n\nResiduals:\n   Min     1Q Median     3Q    Max \n-27231  -5780  -2118   3953  40638 \n\nCoefficients:\n                Estimate Std. Error t value   Pr(&gt;|t|)    \n(Intercept)        -4867      12374  -0.393      0.695    \nlog(total_popE)     6276       1074   5.842 0.00000018 ***\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nResidual standard error: 10760 on 65 degrees of freedom\nMultiple R-squared:  0.3443,    Adjusted R-squared:  0.3342 \nF-statistic: 34.13 on 1 and 65 DF,  p-value: 0.0000001805\n\n\nCode\n# Check which residual plot looks better\n\n\nInterpretation changes: Log models show percentage relationships"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#categorical-variables",
+    "href": "weeklynotes/week5-complete-slides.html#categorical-variables",
+    "title": "Introduction to Linear Regression",
+    "section": "Categorical Variables",
+    "text": "Categorical Variables\n\n\nCode\n# Create metro/non-metro indicator\npa_data &lt;- pa_data %&gt;%\n  mutate(metro = ifelse(total_popE &gt; 500000, 1, 0))\n\nmodel3 &lt;- lm(median_incomeE ~ total_popE + metro, data = pa_data)\nsummary(model3)\n\n\n\nCall:\nlm(formula = median_incomeE ~ total_popE + metro, data = pa_data)\n\nResiduals:\n   Min     1Q Median     3Q    Max \n-28825  -6732  -2885   7672  26622 \n\nCoefficients:\n                Estimate   Std. Error t value             Pr(&gt;|t|)    \n(Intercept) 64924.857892  1659.821786  39.116 &lt; 0.0000000000000002 ***\ntotal_popE     -0.005290     0.008047  -0.657             0.513257    \nmetro       29865.529225  7319.309190   4.080             0.000127 ***\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nResidual standard error: 10610 on 64 degrees of freedom\nMultiple R-squared:  0.3718,    Adjusted R-squared:  0.3522 \nF-statistic: 18.94 on 2 and 64 DF,  p-value: 0.0000003456\n\n\nR creates dummy variables automatically"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#summary-the-regression-workflow",
+    "href": "weeklynotes/week5-complete-slides.html#summary-the-regression-workflow",
+    "title": "Introduction to Linear Regression",
+    "section": "Summary: The Regression Workflow",
+    "text": "Summary: The Regression Workflow\n\nUnderstand the framework: What’s f? What’s the goal?\nVisualize first: Does a linear model make sense?\nFit the model: Estimate coefficients\nEvaluate performance: Train/test split, cross-validation\nCheck assumptions: Residual plots, VIF, outliers\nImprove if needed: Transformations, more variables\nConsider ethics: Who could be harmed by this model?\n\n\n\nKey Takeaways\nStatistical Learning:\n\nWe’re estimating f(X), the systematic relationship\nParametric methods assume a form (we chose linear)\n\nTwo purposes:\n\nInference: understand relationships\nPrediction: forecast new values\n\nModel evaluation:\n\nIn-sample fit ≠ out-of-sample performance\nBeware overfitting!\n\nDiagnostics matter:\n\nAlways check assumptions\nPlots reveal what R² hides"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#the-task",
+    "href": "weeklynotes/week5-complete-slides.html#the-task",
+    "title": "Introduction to Linear Regression",
+    "section": "The Task",
+    "text": "The Task\nPredict median home value (B25077_001) for PA counties using any combination of predictors\nBuild the model with lowest 10-fold cross-validated RMSE"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#available-predictors",
+    "href": "weeklynotes/week5-complete-slides.html#available-predictors",
+    "title": "Introduction to Linear Regression",
+    "section": "Available Predictors",
+    "text": "Available Predictors\n\n\nCode\nchallenge_data &lt;- get_acs(\n  geography = \"county\",\n  state = \"PA\",\n  variables = c(\n    home_value = \"B25077_001\",      # YOUR TARGET\n    total_pop = \"B01003_001\",       # Total population\n    median_income = \"B19013_001\",   # Median household income\n    median_age = \"B01002_001\",      # Median age\n    percent_college = \"B15003_022\", # Bachelor's degree or higher\n    median_rent = \"B25058_001\",     # Median rent\n    poverty_rate = \"B17001_002\"     # Population in poverty\n  ),\n  year = 2022,\n  output = \"wide\"\n)"
+  },
+  {
+    "objectID": "weeklynotes/week5-complete-slides.html#rules-strategy",
+    "href": "weeklynotes/week5-complete-slides.html#rules-strategy",
+    "title": "Introduction to Linear Regression",
+    "section": "Rules & Strategy",
+    "text": "Rules & Strategy\nYou can:\n\nUse any combination of predictors (time permitting, you can fetch more)\nTry log transformations: log(total_popE)\nEngineer new categorical features\nRemove influential outliers (but document which!)\n\nYou must:\n\nUse 10-fold cross-validation to report final RMSE\nDo a full diagnostic check (residual plot, Cook’s D, or Breusch-Pagan)\nBe ready to explain your model in 2 minutes\n\n\n\n\n\n\n\nTipHints\n\n\n\n\nStart simple (one predictor), check diagnostics\nIncome and rent are probably highly correlated (multicollinearity!)\nTry log transformation if relationship looks curved\nDon’t forget to remove NAs: na.omit(challenge_data)"
   }
 ]
