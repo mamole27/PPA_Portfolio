@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Allison Lassiter">
+<meta name="dcterms.date" content="2026-01-27">
+
+<title>Algorithmic Decision Making &amp; Census Data – Mackenna Amole - CPLN 5920 Portfolio</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../../../">
+<script src="../../../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../../../site_libs/bootstrap/bootstrap-e31584831b205ffbb2d98406f31c2a5b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../../../index.html">
+    <span class="navbar-title">Mackenna Amole - CPLN 5920 Portfolio</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-labs" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Labs</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-labs">    
+        <li>
+    <a class="dropdown-item" href="../../../../../../labs/lab_0/lab_0.html">
+ <span class="dropdown-text">Lab 0: dplyr Basics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../../../labs/lab_1/lab_1.html">
+ <span class="dropdown-text">Lab 1: Census Data Exploration</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#todays-agenda" id="toc-todays-agenda" class="nav-link active" data-scroll-target="#todays-agenda">Today’s Agenda</a>
+  <ul class="collapse">
+  <li><a href="#what-well-cover" id="toc-what-well-cover" class="nav-link" data-scroll-target="#what-well-cover">What We’ll Cover</a></li>
+  </ul></li>
+  <li><a href="#part-1-algorithmic-decision-making" id="toc-part-1-algorithmic-decision-making" class="nav-link" data-scroll-target="#part-1-algorithmic-decision-making">Part 1: Algorithmic Decision Making</a>
+  <ul class="collapse">
+  <li><a href="#opening-question" id="toc-opening-question" class="nav-link" data-scroll-target="#opening-question">Opening Question</a></li>
+  <li><a href="#what-is-an-algorithm" id="toc-what-is-an-algorithm" class="nav-link" data-scroll-target="#what-is-an-algorithm">What Is An Algorithm?</a></li>
+  <li><a href="#algorithmic-decision-making-in-government" id="toc-algorithmic-decision-making-in-government" class="nav-link" data-scroll-target="#algorithmic-decision-making-in-government">Algorithmic Decision Making in Government</a></li>
+  <li><a href="#real-world-examples" id="toc-real-world-examples" class="nav-link" data-scroll-target="#real-world-examples">Real-World Examples</a></li>
+  <li><a href="#clarifying-key-terms" id="toc-clarifying-key-terms" class="nav-link" data-scroll-target="#clarifying-key-terms">Clarifying Key Terms</a></li>
+  <li><a href="#public-sector-context" id="toc-public-sector-context" class="nav-link" data-scroll-target="#public-sector-context">Public Sector Context</a></li>
+  <li><a href="#why-government-uses-algorithms" id="toc-why-government-uses-algorithms" class="nav-link" data-scroll-target="#why-government-uses-algorithms">Why Government Uses Algorithms</a></li>
+  </ul></li>
+  <li><a href="#when-algorithms-go-wrong" id="toc-when-algorithms-go-wrong" class="nav-link" data-scroll-target="#when-algorithms-go-wrong">When Algorithms Go Wrong</a>
+  <ul class="collapse">
+  <li><a href="#remember-data-analytics-is-subjective" id="toc-remember-data-analytics-is-subjective" class="nav-link" data-scroll-target="#remember-data-analytics-is-subjective">Remember: Data Analytics Is Subjective</a></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"></a></li>
+  <li><a href="#criminal-justice-algorithm-bias" id="toc-criminal-justice-algorithm-bias" class="nav-link" data-scroll-target="#criminal-justice-algorithm-bias">Criminal Justice Algorithm Bias</a></li>
+  <li><a href="#dutch-welfare-fraud-detection" id="toc-dutch-welfare-fraud-detection" class="nav-link" data-scroll-target="#dutch-welfare-fraud-detection">Dutch Welfare Fraud Detection</a></li>
+  </ul></li>
+  <li><a href="#part-2-active-learning-exercise" id="toc-part-2-active-learning-exercise" class="nav-link" data-scroll-target="#part-2-active-learning-exercise">Part 2: Active Learning Exercise</a>
+  <ul class="collapse">
+  <li><a href="#small-group-challenge-10-minutes-we-keep-a-tight-ship-around-here." id="toc-small-group-challenge-10-minutes-we-keep-a-tight-ship-around-here." class="nav-link" data-scroll-target="#small-group-challenge-10-minutes-we-keep-a-tight-ship-around-here.">Small Group Challenge (10 Minutes! We keep a tight ship around here.)</a></li>
+  <li><a href="#pick-one-scenario" id="toc-pick-one-scenario" class="nav-link" data-scroll-target="#pick-one-scenario">Pick one scenario</a></li>
+  <li><a href="#example-so-you-see-the-level" id="toc-example-so-you-see-the-level" class="nav-link" data-scroll-target="#example-so-you-see-the-level">Example (so you see the level)</a></li>
+  <li><a href="#discuss-at-your-table-8-minutes" id="toc-discuss-at-your-table-8-minutes" class="nav-link" data-scroll-target="#discuss-at-your-table-8-minutes">Discuss at your table (8 minutes)</a></li>
+  <li><a href="#lightning-shares-23-tables" id="toc-lightning-shares-23-tables" class="nav-link" data-scroll-target="#lightning-shares-23-tables">Lightning shares (2–3 tables)</a></li>
+  </ul></li>
+  <li><a href="#part-3-census-data-foundations" id="toc-part-3-census-data-foundations" class="nav-link" data-scroll-target="#part-3-census-data-foundations">Part 3: Census Data Foundations</a>
+  <ul class="collapse">
+  <li><a href="#why-census-data-matters" id="toc-why-census-data-matters" class="nav-link" data-scroll-target="#why-census-data-matters">Why Census Data Matters</a></li>
+  <li><a href="#census-vs.-american-community-survey" id="toc-census-vs.-american-community-survey" class="nav-link" data-scroll-target="#census-vs.-american-community-survey">Census vs.&nbsp;American Community Survey</a></li>
+  <li><a href="#acs-estimates-what-you-need-to-know" id="toc-acs-estimates-what-you-need-to-know" class="nav-link" data-scroll-target="#acs-estimates-what-you-need-to-know">ACS Estimates: What You Need to Know</a></li>
+  <li><a href="#census-geography-hierarchy" id="toc-census-geography-hierarchy" class="nav-link" data-scroll-target="#census-geography-hierarchy">Census Geography Hierarchy</a></li>
+  <li><a href="#census-innovation-differential-privacy" id="toc-census-innovation-differential-privacy" class="nav-link" data-scroll-target="#census-innovation-differential-privacy">2020 Census Innovation: Differential Privacy</a></li>
+  <li><a href="#accessing-census-data-in-r" id="toc-accessing-census-data-in-r" class="nav-link" data-scroll-target="#accessing-census-data-in-r">Accessing Census Data in R</a></li>
+  <li><a href="#understanding-acs-data-structure" id="toc-understanding-acs-data-structure" class="nav-link" data-scroll-target="#understanding-acs-data-structure">Understanding ACS Data Structure</a></li>
+  <li><a href="#working-with-margins-of-error" id="toc-working-with-margins-of-error" class="nav-link" data-scroll-target="#working-with-margins-of-error">Working with Margins of Error</a></li>
+  <li><a href="#two-types-of-census-data" id="toc-two-types-of-census-data" class="nav-link" data-scroll-target="#two-types-of-census-data">Two Types of Census Data</a></li>
+  <li><a href="#when-new-data-comes-out" id="toc-when-new-data-comes-out" class="nav-link" data-scroll-target="#when-new-data-comes-out">When New Data Comes Out</a></li>
+  <li><a href="#data-sources-youll-use" id="toc-data-sources-youll-use" class="nav-link" data-scroll-target="#data-sources-youll-use">Data Sources You’ll Use</a></li>
+  </ul></li>
+  <li><a href="#part-4-hands-on-census-data-with-r" id="toc-part-4-hands-on-census-data-with-r" class="nav-link" data-scroll-target="#part-4-hands-on-census-data-with-r">Part 4: Hands-On Census Data with R</a>
+  <ul class="collapse">
+  <li><a href="#live-demo-setup" id="toc-live-demo-setup" class="nav-link" data-scroll-target="#live-demo-setup">Live Demo Setup</a></li>
+  <li><a href="#basic-get_acs-function" id="toc-basic-get_acs-function" class="nav-link" data-scroll-target="#basic-get_acs-function">Basic get_acs() Function</a></li>
+  <li><a href="#understanding-the-output" id="toc-understanding-the-output" class="nav-link" data-scroll-target="#understanding-the-output">Understanding the Output</a></li>
+  <li><a href="#working-with-multiple-variables" id="toc-working-with-multiple-variables" class="nav-link" data-scroll-target="#working-with-multiple-variables">Working with Multiple Variables</a></li>
+  <li><a href="#data-cleaning-essentials" id="toc-data-cleaning-essentials" class="nav-link" data-scroll-target="#data-cleaning-essentials">Data Cleaning Essentials</a></li>
+  <li><a href="#calculating-data-reliability" id="toc-calculating-data-reliability" class="nav-link" data-scroll-target="#calculating-data-reliability">Calculating Data Reliability</a></li>
+  <li><a href="#finding-patterns-with-dplyr" id="toc-finding-patterns-with-dplyr" class="nav-link" data-scroll-target="#finding-patterns-with-dplyr">Finding Patterns with dplyr</a></li>
+  <li><a href="#professional-tables" id="toc-professional-tables" class="nav-link" data-scroll-target="#professional-tables">Professional Tables</a></li>
+  <li><a href="#quick-practice" id="toc-quick-practice" class="nav-link" data-scroll-target="#quick-practice">Quick Practice</a></li>
+  <li><a href="#policy-connection" id="toc-policy-connection" class="nav-link" data-scroll-target="#policy-connection">Policy Connection</a></li>
+  </ul></li>
+  <li><a href="#connecting-the-dots" id="toc-connecting-the-dots" class="nav-link" data-scroll-target="#connecting-the-dots">Connecting the Dots</a>
+  <ul class="collapse">
+  <li><a href="#from-algorithms-to-analysis" id="toc-from-algorithms-to-analysis" class="nav-link" data-scroll-target="#from-algorithms-to-analysis">From Algorithms to Analysis</a></li>
+  <li><a href="#questions-for-reflection" id="toc-questions-for-reflection" class="nav-link" data-scroll-target="#questions-for-reflection">Questions for Reflection</a></li>
+  </ul></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a>
+  <ul class="collapse">
+  <li><a href="#before-next-class" id="toc-before-next-class" class="nav-link" data-scroll-target="#before-next-class">Before Next Class</a></li>
+  <li><a href="#questions" id="toc-questions" class="nav-link" data-scroll-target="#questions">Questions?</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="week2_slides.html"><i class="bi bi-file-slides"></i>RevealJS</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Algorithmic Decision Making &amp; Census Data</h1>
+<p class="subtitle lead">Week 2: CPLN 5920-MUSA 5080</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Allison Lassiter </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="todays-agenda" class="level1">
+<h1>Today’s Agenda</h1>
+<section id="what-well-cover" class="level2">
+<h2 class="anchored" data-anchor-id="what-well-cover">What We’ll Cover</h2>
+<p><strong>Part 0: Questions from Last Week</strong> - Github - R? dplyr?</p>
+<p><strong>Part 1: Algorithmic Decision Making</strong></p>
+<ul>
+<li>What are algorithms in public policy?</li>
+<li>When algorithmic decision making goes wrong</li>
+<li>Current policy responses</li>
+</ul>
+<p><strong>Part 2: Active Learning</strong></p>
+<ul>
+<li>Small group scenarios: designing ethical algorithms</li>
+<li>Discussion and reflection</li>
+</ul>
+<p><strong>Part 3: Census Data Foundations</strong></p>
+<ul>
+<li>Understanding census data for policy analysis</li>
+<li>Geography and data availability</li>
+</ul>
+<p><strong>Part 4: Hands-On Census Data with R</strong></p>
+<ul>
+<li>Live demonstration of key functions</li>
+<li>Practice exercises</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="part-1-algorithmic-decision-making" class="level1">
+<h1>Part 1: Algorithmic Decision Making</h1>
+<section id="opening-question" class="level2">
+<h2 class="anchored" data-anchor-id="opening-question">Opening Question</h2>
+<p><strong>Discuss with your table (1 minutes):</strong></p>
+<p>What is an algorithm?</p>
+<p><em>Think beyond just computer code - how do you make decisions in daily life?</em></p>
+</section>
+<section id="what-is-an-algorithm" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-an-algorithm">What Is An Algorithm?</h2>
+<p><strong>Definition:</strong> A set of rules or instructions for solving a problem or completing a task</p>
+<p><strong>Examples:</strong></p>
+<ul>
+<li><p>Recipe for cooking</p></li>
+<li><p>Directions to get somewhere<br>
+</p></li>
+<li><p>Decision tree for hiring</p></li>
+<li><p><strong>Computer program that processes data to make predictions</strong></p></li>
+</ul>
+</section>
+<section id="algorithmic-decision-making-in-government" class="level2">
+<h2 class="anchored" data-anchor-id="algorithmic-decision-making-in-government">Algorithmic Decision Making in Government</h2>
+<p><strong>Systems used to assist or replace human decision-makers</strong></p>
+<p>Based on predictions from models that process historical data containing:</p>
+<ul>
+<li><strong>Inputs</strong> (“features”, “predictors”, “independent variables”, “x”)</li>
+<li><strong>Outputs</strong> (“labels”, “outcome”, “dependent variable”, “y”)</li>
+</ul>
+</section>
+<section id="real-world-examples" class="level2">
+<h2 class="anchored" data-anchor-id="real-world-examples">Real-World Examples</h2>
+<div class="columns">
+<div class="column" style="width:30%;">
+<p><strong>Criminal Justice</strong> Recidivism risk scores for bail and sentencing decisions</p>
+</div><div class="column" style="width:30%;">
+<p><strong>Housing &amp; Finance</strong><br>
+Mortgage lending and tenant screening algorithms</p>
+</div><div class="column" style="width:30%;">
+<p><strong>Healthcare</strong> Patient care prioritization and resource allocation</p>
+</div>
+</div>
+</section>
+<section id="clarifying-key-terms" class="level2">
+<h2 class="anchored" data-anchor-id="clarifying-key-terms">Clarifying Key Terms</h2>
+<p><strong>Data Science</strong> → Computer science/engineering focus on algorithms and methods</p>
+<p><strong>Data Analytics</strong> → Application of data science methods to other disciplines</p>
+<p><strong>Machine Learning</strong> → Algorithms for classification &amp; prediction that learn from data</p>
+<p><strong>AI</strong> → Algorithms that adjust and improve across iterations (neural networks, etc.)</p>
+</section>
+<section id="public-sector-context" class="level2">
+<h2 class="anchored" data-anchor-id="public-sector-context">Public Sector Context</h2>
+<p><strong>Long history of government data collection:</strong></p>
+<ul>
+<li>Civic registration systems<br>
+</li>
+<li>Census data</li>
+<li>Administrative records</li>
+<li>Operations research (post-WWII)</li>
+</ul>
+<p><strong>What’s new?</strong></p>
+<ul>
+<li>More data (official and “accidental”)</li>
+<li>Focus on <strong>prediction</strong> rather than explanation</li>
+<li><strong>Harder to interpret</strong> and explain</li>
+</ul>
+</section>
+<section id="why-government-uses-algorithms" class="level2">
+<h2 class="anchored" data-anchor-id="why-government-uses-algorithms">Why Government Uses Algorithms</h2>
+<p><strong>Governments have limited budgets and need to serve everyone</strong></p>
+<p>Algorithmic decision making is especially appealing because it promises:</p>
+<ul>
+<li><strong>Efficiency</strong> - process more cases faster</li>
+<li><strong>Consistency</strong> - same rules applied to everyone<br>
+</li>
+<li><strong>Objectivity</strong> - removes human bias</li>
+<li><strong>Cost savings</strong> - fewer staff needed</li>
+</ul>
+<p><strong>But does it deliver on these promises?</strong></p>
+<hr>
+</section>
+</section>
+<section id="when-algorithms-go-wrong" class="level1">
+<h1>When Algorithms Go Wrong</h1>
+<section id="remember-data-analytics-is-subjective" class="level2">
+<h2 class="anchored" data-anchor-id="remember-data-analytics-is-subjective">Remember: Data Analytics Is Subjective</h2>
+<p><strong>Every step involves human choices:</strong></p>
+<ul>
+<li>Data cleaning decisions</li>
+<li>Data coding or classification<br>
+</li>
+<li>Data collection - use of imperfect proxies</li>
+<li>How you interpret results</li>
+<li>What variables you put in the model</li>
+</ul>
+<p><strong>These choices embed human values and biases</strong></p>
+</section>
+<section id="section" class="level2 smaller">
+<h2 class="smaller anchored" data-anchor-id="section"></h2>
+<p><strong>Healthcare Algorithm Bias</strong></p>
+<p><strong>The Problem:</strong></p>
+<p>Algorithm used to identify high-risk patients for additional care <strong>systematically discriminated against Black patients</strong></p>
+<p><strong>What Went Wrong:</strong></p>
+<ul>
+<li>Algorithm used <strong>healthcare costs as a proxy for need</strong></li>
+<li>Black patients typically incur lower costs due to <strong>systemic inequities in access</strong><br>
+</li>
+<li>Result: Black patients under-prioritized despite <strong>equivalent levels of illness</strong></li>
+</ul>
+<p><strong>Scale:</strong> Used by hospitals and insurers for <strong>over 200 million people</strong> annually</p>
+<p><em>Source: Obermeyer et al.&nbsp;(2019), Science</em></p>
+</section>
+<section id="criminal-justice-algorithm-bias" class="level2">
+<h2 class="anchored" data-anchor-id="criminal-justice-algorithm-bias">Criminal Justice Algorithm Bias</h2>
+<p><strong>COMPAS Recidivism Prediction:</strong></p>
+<p><strong>The Problem:</strong></p>
+<ul>
+<li>Algorithm <strong>2x as likely</strong> to falsely flag Black defendants as high risk</li>
+<li>White defendants often rated low risk <strong>even when they do reoffend</strong></li>
+</ul>
+<p><strong>Why This Happens:</strong></p>
+<ul>
+<li><p>Historical arrest data reflects <strong>biased policing patterns</strong></p></li>
+<li><p>Socioeconomic proxies correlate with race</p></li>
+<li><p><strong>“Objective” data contains subjective human decisions</strong></p></li>
+</ul>
+<p><em>Source: ProPublica investigation</em></p>
+</section>
+<section id="dutch-welfare-fraud-detection" class="level2">
+<h2 class="anchored" data-anchor-id="dutch-welfare-fraud-detection">Dutch Welfare Fraud Detection</h2>
+<p><strong>The Problem:</strong></p>
+<ul>
+<li><strong>“Black box” system</strong> operated in secrecy</li>
+<li>Impossible for individuals to understand or challenge decisions</li>
+<li><strong>Disproportionately targeted</strong> vulnerable populations</li>
+</ul>
+<p><strong>Court Ruling:</strong></p>
+<ul>
+<li>Breached privacy rights under European Convention on Human Rights</li>
+<li>Highlighted <strong>unfair profiling and discrimination</strong></li>
+<li>System eventually <strong>shut down</strong></li>
+</ul>
+</section>
+</section>
+<section id="part-2-active-learning-exercise" class="level1">
+<h1>Part 2: Active Learning Exercise</h1>
+<section id="small-group-challenge-10-minutes-we-keep-a-tight-ship-around-here." class="level2">
+<h2 class="anchored" data-anchor-id="small-group-challenge-10-minutes-we-keep-a-tight-ship-around-here.">Small Group Challenge (10 Minutes! We keep a tight ship around here.)</h2>
+<p>At your table, pick <strong>one</strong> scenario and answer <strong>three</strong> prompts.</p>
+<p><strong>Prompts (plain English, no tech):</strong></p>
+<ol type="1">
+<li><strong>Proxy:</strong> What would you <em>use</em> to stand in for what you <em>want</em>?</li>
+<li><strong>Blind spot:</strong> What data gap or historical bias could skew results?</li>
+<li><strong>Harm + Guardrail:</strong> Who could be harmed, and one simple safeguard?</li>
+</ol>
+</section>
+<section id="pick-one-scenario" class="level2">
+<h2 class="anchored" data-anchor-id="pick-one-scenario">Pick one scenario</h2>
+<ol type="1">
+<li><strong>Emergency response prioritization</strong> (natural disasters)<br>
+</li>
+<li><strong>School enrollment assignment</strong><br>
+</li>
+<li><strong>Automated traffic enforcement</strong> (red-light cameras)<br>
+</li>
+<li><strong>Housing assistance allocation</strong><br>
+</li>
+<li><strong>Predictive policing</strong></li>
+</ol>
+</section>
+<section id="example-so-you-see-the-level" class="level2">
+<h2 class="anchored" data-anchor-id="example-so-you-see-the-level">Example (so you see the level)</h2>
+<p><strong>Scenario:</strong> Emergency response</p>
+<ul>
+<li><strong>Proxy:</strong> 911 call volume → stand-in for “need”<br>
+</li>
+<li><strong>Blind spot:</strong> Under-calling where trust/connectivity is low<br>
+</li>
+<li><strong>Harm + Guardrail:</strong> Wealthier areas over-prioritized → add a <strong>vulnerability boost</strong> (age/disability) and a <strong>minimum-service floor</strong> per zone</li>
+</ul>
+</section>
+<section id="discuss-at-your-table-8-minutes" class="level2">
+<h2 class="anchored" data-anchor-id="discuss-at-your-table-8-minutes">Discuss at your table (8 minutes)</h2>
+<p><strong>Answer these out loud and on one device or notepad:</strong></p>
+<ul>
+<li><strong>Proxy →</strong> “We’d use ____ as a stand-in for ____.”</li>
+<li><strong>Blind spot →</strong> “This could miss/undercount ____ because ____.”</li>
+<li><strong>Harm + Guardrail →</strong> “Group ____ could be hurt by ____. We’d add ____ (one safeguard).”</li>
+</ul>
+<p><strong>Choose ONE guardrail type:</strong></p>
+<ul>
+<li>Prioritize vulnerable groups<br>
+</li>
+<li>Cap disparities across areas (simple rule)<br>
+</li>
+<li>Human review + appeals for edge cases<br>
+</li>
+<li>Replace a bad proxy (collect the right thing)<br>
+</li>
+<li>Publish criteria &amp; run a periodic bias check</li>
+</ul>
+</section>
+<section id="lightning-shares-23-tables" class="level2">
+<h2 class="anchored" data-anchor-id="lightning-shares-23-tables">Lightning shares (2–3 tables)</h2>
+<p>In <strong>≤20 seconds</strong>, say:</p>
+<ul>
+<li><strong>Scenario</strong>, <strong>one proxy</strong>, <strong>one harm</strong>, <strong>one guardrail</strong></li>
+</ul>
+<p>Class quick poll: <em>Would that guardrail help?</em></p>
+<ul>
+<li>👍 Green light</li>
+<li>👎 Red light</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="part-3-census-data-foundations" class="level1">
+<h1>Part 3: Census Data Foundations</h1>
+<section id="why-census-data-matters" class="level2">
+<h2 class="anchored" data-anchor-id="why-census-data-matters">Why Census Data Matters</h2>
+<p><strong>Census data is the foundation for:</strong></p>
+<ul>
+<li><p>Understanding community demographics</p></li>
+<li><p>Allocating government resources<br>
+</p></li>
+<li><p>Tracking neighborhood change</p></li>
+<li><p><strong>Designing fair algorithms</strong> (like those we just discussed)</p></li>
+</ul>
+<p><strong>Connection:</strong> The same demographic data used in census goes into many of the algorithms we analyzed</p>
+</section>
+<section id="census-vs.-american-community-survey" class="level2">
+<h2 class="anchored" data-anchor-id="census-vs.-american-community-survey">Census vs.&nbsp;American Community Survey</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Decennial Census (2020)</strong></p>
+<ul>
+<li><strong>Everyone</strong> counted every 10 years</li>
+<li><strong>9 basic questions:</strong> age, race, sex, housing</li>
+<li><strong>Constitutional requirement</strong></li>
+<li>Determines political representation</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>American Community Survey (ACS)</strong></p>
+<ul>
+<li><strong>3% of households</strong> surveyed annually</li>
+<li><strong>Detailed questions:</strong> income, education, employment, housing costs</li>
+<li><strong>Replaced</strong> the old “long form” in 2005</li>
+<li><strong>A big source of data we’ll use</strong> this semester</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="acs-estimates-what-you-need-to-know" class="level2">
+<h2 class="anchored" data-anchor-id="acs-estimates-what-you-need-to-know">ACS Estimates: What You Need to Know</h2>
+<p><strong>1-Year Estimates</strong> (areas &gt; 65,000 people)</p>
+<ul>
+<li>Most current data, smallest sample</li>
+</ul>
+<p><strong>5-Year Estimates</strong> (all areas including census tracts)</p>
+<ul>
+<li>Most reliable data, largest sample</li>
+<li><strong>What you’ll use most often</strong></li>
+</ul>
+<p><strong>Key Point:</strong> All ACS data comes with <strong>margins of error</strong> - we’ll learn to work with uncertainty</p>
+</section>
+<section id="census-geography-hierarchy" class="level2">
+<h2 class="anchored" data-anchor-id="census-geography-hierarchy">Census Geography Hierarchy</h2>
+<pre><code>Nation
+├── Regions  
+├── States
+│   ├── Counties
+│   │   ├── Census Tracts (1,500-8,000 people)
+│   │   │   ├── Block Groups (600-3,000 people)  
+│   │   │   │   └── Blocks (≈85 people, Decennial only)</code></pre>
+<p><strong>Most policy analysis happens at:</strong></p>
+<ul>
+<li><strong>County level</strong> - state and regional planning</li>
+<li><strong>Census tract level</strong> - neighborhood analysis</li>
+<li><strong>Block group level</strong> - very local analysis (tempting, but big MOEs)</li>
+</ul>
+</section>
+<section id="census-innovation-differential-privacy" class="level2">
+<h2 class="anchored" data-anchor-id="census-innovation-differential-privacy">2020 Census Innovation: Differential Privacy</h2>
+<p><strong>The Challenge:</strong> Modern computing can “re-identify” individuals from census data</p>
+<p><strong>The Solution:</strong> Add mathematical “noise” to protect privacy while preserving overall patterns</p>
+<p><strong>The Controversy:</strong> Some places now show populations living “underwater” or other impossible results</p>
+<p><strong>Why This Matters:</strong> Even “objective” data involves <strong>subjective choices</strong> about privacy vs.&nbsp;accuracy. Also, the errors.</p>
+</section>
+<section id="accessing-census-data-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="accessing-census-data-in-r">Accessing Census Data in R</h2>
+<p><strong>Traditional approach:</strong> Download CSV files from Census website</p>
+<p><strong>Modern approach:</strong> Use R packages to access data directly</p>
+<p><strong>Benefits of programmatic access:</strong></p>
+<ul>
+<li>Always get latest data</li>
+<li>Reproducible workflows<br>
+</li>
+<li>Automatic geographic boundaries</li>
+<li>Built-in error handling</li>
+</ul>
+<p><strong>We’ll use the <code>tidycensus</code> package starting in Lab 1</strong></p>
+</section>
+<section id="understanding-acs-data-structure" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-acs-data-structure">Understanding ACS Data Structure</h2>
+<p><strong>Data organized in tables:</strong></p>
+<ul>
+<li><strong>B19013</strong> - Median Household Income</li>
+<li><strong>B25003</strong> - Housing Tenure (Own/Rent)<br>
+</li>
+<li><strong>B15003</strong> - Educational Attainment</li>
+<li><strong>B08301</strong> - Commuting to Work</li>
+</ul>
+<p><strong>Each table has multiple variables:</strong></p>
+<ul>
+<li>B19013_001E = Median household income (estimate)</li>
+<li>B19013_001M = Median household income (margin of error)</li>
+</ul>
+<p><strong>You’ll learn to find the right variables for your research questions</strong></p>
+</section>
+<section id="working-with-margins-of-error" class="level2">
+<h2 class="anchored" data-anchor-id="working-with-margins-of-error">Working with Margins of Error</h2>
+<p><strong>Every ACS estimate comes with uncertainty</strong></p>
+<p><strong>Rule of thumb:</strong></p>
+<ul>
+<li>Large MOE relative to estimate = <strong>less reliable</strong></li>
+<li>Small MOE relative to estimate = <strong>more reliable</strong></li>
+</ul>
+<p><strong>In your analysis:</strong></p>
+<ul>
+<li>Always report MOE alongside estimates</li>
+<li>Be cautious comparing estimates with overlapping error margins</li>
+<li>Consider using 5-year estimates for greater reliability</li>
+</ul>
+</section>
+<section id="two-types-of-census-data" class="level2">
+<h2 class="anchored" data-anchor-id="two-types-of-census-data">Two Types of Census Data</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Summary Tables</strong> (what we’ll use mostly)</p>
+<ul>
+<li>Pre-calculated statistics by geography</li>
+<li>Median income, percent college-educated, etc.</li>
+<li><strong>Good for:</strong> Mapping, comparing places</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>PUMS - Individual Records</strong></p>
+<ul>
+<li>Anonymous individual/household responses</li>
+<li><strong>Good for:</strong> Custom analysis, regression models</li>
+<li>More complex but more flexible</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="when-new-data-comes-out" class="level2">
+<h2 class="anchored" data-anchor-id="when-new-data-comes-out">When New Data Comes Out</h2>
+<p><strong>ACS 1-year estimates:</strong> Released in September (previous year’s data)</p>
+<p><strong>ACS 5-year estimates:</strong> Released in December</p>
+<p><strong>Decennial Census:</strong> Released on rolling schedule over 2-3 years</p>
+<p><strong>For Lab 1:</strong> We’ll use 2018-2022 ACS 5-year estimates (latest available)</p>
+</section>
+<section id="data-sources-youll-use" class="level2">
+<h2 class="anchored" data-anchor-id="data-sources-youll-use">Data Sources You’ll Use</h2>
+<p><strong>TIGER/Line Files</strong></p>
+<ul>
+<li>Geographic boundaries (shapefiles)</li>
+<li>Census tracts, counties, states</li>
+<li>Now released as shapefiles (easier to use!)</li>
+</ul>
+<p><strong>Historical Data Sources:</strong></p>
+<ul>
+<li>NHGIS (nhgis.org) - Historical census data</li>
+<li>Neighborhood Change Database</li>
+<li>Longitudinal Tract Database - Track changes over time</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="part-4-hands-on-census-data-with-r" class="level1">
+<h1>Part 4: Hands-On Census Data with R</h1>
+<section id="live-demo-setup" class="level2">
+<h2 class="anchored" data-anchor-id="live-demo-setup">Live Demo Setup</h2>
+<p>Let’s see tidycensus in action with some basic examples:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.3.0
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.1.0     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Set API key (you'll get yours for Lab 1)</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">census_api_key</span>(<span class="st">"42bf8a20a3df1def380f330cf7edad0dd5842ce6"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>To install your API key for use in future sessions, run this function with `install = TRUE`.</code></pre>
+</div>
+</div>
+<p><strong>Follow along:</strong> We’ll work through examples together, then you’ll practice in Lab 1</p>
+</section>
+<section id="basic-get_acs-function" class="level2">
+<h2 class="anchored" data-anchor-id="basic-get_acs-function">Basic get_acs() Function</h2>
+<p><strong>Most important function you’ll use:</strong></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get state-level population data</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>state_pop <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"state"</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">"B01003_001"</span>,  <span class="co"># Total population</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2022</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">survey =</span> <span class="st">"acs5"</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2018-2022 5-year ACS</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(state_pop)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 52
+Columns: 5
+$ GEOID    &lt;chr&gt; "01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "…
+$ NAME     &lt;chr&gt; "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Co…
+$ variable &lt;chr&gt; "B01003_001", "B01003_001", "B01003_001", "B01003_001", "B010…
+$ estimate &lt;dbl&gt; 5028092, 734821, 7172282, 3018669, 39356104, 5770790, 3611317…
+$ moe      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…</code></pre>
+</div>
+</div>
+<p><strong>Key parameters:</strong> geography, variables, year, survey</p>
+</section>
+<section id="understanding-the-output" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-the-output">Understanding the Output</h2>
+<p><strong>Every ACS result includes:</strong></p>
+<ul>
+<li><code>GEOID</code> - Geographic identifier</li>
+<li><code>NAME</code> - Human-readable location name<br>
+</li>
+<li><code>variable</code> - Census variable code</li>
+<li><code>estimate</code> - The actual value</li>
+<li><code>moe</code> - Margin of error</li>
+</ul>
+<p><strong>This is the foundation for all your analysis</strong></p>
+</section>
+<section id="working-with-multiple-variables" class="level2">
+<h2 class="anchored" data-anchor-id="working-with-multiple-variables">Working with Multiple Variables</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get income and population for Pennsylvania counties</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>pa_data <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"county"</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="fu">c</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_pop =</span> <span class="st">"B01003_001"</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_income =</span> <span class="st">"B19013_001"</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">"PA"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2022</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">output =</span> <span class="st">"wide"</span>  <span class="co"># Makes analysis easier</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2018-2022 5-year ACS</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pa_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  GEOID NAME                 total_popE total_popM median_incomeE median_incomeM
+  &lt;chr&gt; &lt;chr&gt;                     &lt;dbl&gt;      &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;
+1 42001 Adams County, Penns…     104604         NA          78975           3334
+2 42003 Allegheny County, P…    1245310         NA          72537            869
+3 42005 Armstrong County, P…      65538         NA          61011           2202
+4 42007 Beaver County, Penn…     167629         NA          67194           1531
+5 42009 Bedford County, Pen…      47613         NA          58337           2606
+6 42011 Berks County, Penns…     428483         NA          74617           1191</code></pre>
+</div>
+</div>
+<p><strong>Note:</strong> <code>output = "wide"</code> gives you one row per place, multiple columns for variables</p>
+</section>
+<section id="data-cleaning-essentials" class="level2">
+<h2 class="anchored" data-anchor-id="data-cleaning-essentials">Data Cleaning Essentials</h2>
+<p><strong>Clean up messy geographic names:</strong></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>pa_clean <span class="ot">&lt;-</span> pa_data <span class="sc">%&gt;%</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove state name from county names</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">county_name =</span> <span class="fu">str_remove</span>(NAME, <span class="st">", Pennsylvania"</span>),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove "County" word</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">county_name =</span> <span class="fu">str_remove</span>(county_name, <span class="st">" County"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare before and after</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(pa_clean, NAME, county_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 67 × 2
+   NAME                           county_name
+   &lt;chr&gt;                          &lt;chr&gt;      
+ 1 Adams County, Pennsylvania     Adams      
+ 2 Allegheny County, Pennsylvania Allegheny  
+ 3 Armstrong County, Pennsylvania Armstrong  
+ 4 Beaver County, Pennsylvania    Beaver     
+ 5 Bedford County, Pennsylvania   Bedford    
+ 6 Berks County, Pennsylvania     Berks      
+ 7 Blair County, Pennsylvania     Blair      
+ 8 Bradford County, Pennsylvania  Bradford   
+ 9 Bucks County, Pennsylvania     Bucks      
+10 Butler County, Pennsylvania    Butler     
+# ℹ 57 more rows</code></pre>
+</div>
+</div>
+<p><strong>Functions you’ll use:</strong> <code>str_remove()</code>, <code>str_extract()</code>, <code>str_replace()</code></p>
+</section>
+<section id="calculating-data-reliability" class="level2">
+<h2 class="anchored" data-anchor-id="calculating-data-reliability">Calculating Data Reliability</h2>
+<p><strong>This is crucial for policy work:</strong></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pa_reliability <span class="ot">&lt;-</span> pa_clean <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate MOE as percentage of estimate</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">moe_percentage =</span> <span class="fu">round</span>((median_incomeM <span class="sc">/</span> median_incomeE) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create reliability categories</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">reliability =</span> <span class="fu">case_when</span>(</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      moe_percentage <span class="sc">&lt;</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"High Confidence"</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>      moe_percentage <span class="sc">&gt;=</span> <span class="dv">5</span> <span class="sc">&amp;</span> moe_percentage <span class="sc">&lt;=</span> <span class="dv">10</span> <span class="sc">~</span> <span class="st">"Moderate"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>      moe_percentage <span class="sc">&gt;</span> <span class="dv">10</span> <span class="sc">~</span> <span class="st">"Low Confidence"</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(pa_reliability, reliability)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  reliability         n
+  &lt;chr&gt;           &lt;int&gt;
+1 High Confidence    57
+2 Moderate           10</code></pre>
+</div>
+</div>
+<p><strong>Key functions:</strong> <code>case_when()</code> for categories, MOE calculations</p>
+</section>
+<section id="finding-patterns-with-dplyr" class="level2">
+<h2 class="anchored" data-anchor-id="finding-patterns-with-dplyr">Finding Patterns with dplyr</h2>
+<ul>
+<li>Find counties with highest uncertainty</li>
+<li>Summarize by reliability category</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find counties with highest uncertainty</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>high_uncertainty <span class="ot">&lt;-</span> pa_reliability <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(moe_percentage <span class="sc">&gt;</span> <span class="dv">8</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(moe_percentage)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(county_name, median_incomeE, moe_percentage)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary by reliability category  </span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>reliability_summary <span class="ot">&lt;-</span> pa_reliability <span class="sc">%&gt;%</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(reliability) <span class="sc">%&gt;%</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">counties =</span> <span class="fu">n</span>(),</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_income =</span> <span class="fu">round</span>(<span class="fu">mean</span>(median_incomeE, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">0</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="professional-tables" class="level2">
+<h2 class="anchored" data-anchor-id="professional-tables">Professional Tables</h2>
+<p><strong>Making results presentation-ready:</strong></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create formatted table</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(high_uncertainty,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"County"</span>, <span class="st">"Median Income"</span>, <span class="st">"MOE %"</span>),</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">caption =</span> <span class="st">"Counties with Highest Income Data Uncertainty"</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">format.args =</span> <span class="fu">list</span>(<span class="at">big.mark =</span> <span class="st">","</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Counties with Highest Income Data Uncertainty</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">County</th>
+<th style="text-align: right;">Median Income</th>
+<th style="text-align: right;">MOE %</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Forest</td>
+<td style="text-align: right;">46,188</td>
+<td style="text-align: right;">9.99</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sullivan</td>
+<td style="text-align: right;">62,910</td>
+<td style="text-align: right;">9.25</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Key points:</strong></p>
+<ul>
+<li>Use <code>kable()</code> for professional formatting</li>
+<li>Add descriptive column names and captions<br>
+</li>
+<li>Format numbers appropriately</li>
+</ul>
+</section>
+<section id="quick-practice" class="level2">
+<h2 class="anchored" data-anchor-id="quick-practice">Quick Practice</h2>
+<p><strong>Try this with a neighbor (5 minutes):</strong></p>
+<p>Using the <code>pa_reliability</code> data we just created:</p>
+<ol type="1">
+<li><strong>Filter</strong> for counties with “High Confidence” data</li>
+<li><strong>Arrange</strong> by median income (highest first)<br>
+</li>
+<li><strong>Select</strong> county name and median income</li>
+<li><strong>Slice</strong> the top 3 counties</li>
+</ol>
+<p><strong>We’ll share answers before moving on</strong></p>
+</section>
+<section id="policy-connection" class="level2">
+<h2 class="anchored" data-anchor-id="policy-connection">Policy Connection</h2>
+<p><strong>Why this matters:</strong></p>
+<ul>
+<li><strong>Algorithmic fairness:</strong> Unreliable data can bias automated decisions</li>
+<li><strong>Resource allocation:</strong> Know which areas need extra attention</li>
+<li><strong>Equity analysis:</strong> Some communities may be systematically under-counted</li>
+<li><strong>Professional credibility:</strong> Always assess your data quality</li>
+</ul>
+<p><strong>This connects directly to our algorithmic bias discussion</strong></p>
+<hr>
+</section>
+</section>
+<section id="connecting-the-dots" class="level1">
+<h1>Connecting the Dots</h1>
+<section id="from-algorithms-to-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="from-algorithms-to-analysis">From Algorithms to Analysis</h2>
+<p><strong>Today’s key connections:</strong></p>
+<p><strong>Algorithmic Decision Making</strong> → Understanding why your analysis matters for real policy decisions</p>
+<p><strong>Data Subjectivity</strong> → Why we emphasize <strong>transparent, reproducible methods</strong> in this class</p>
+<p><strong>Census Data</strong> → The foundation for most urban planning and policy analysis</p>
+<p><strong>R Skills</strong> → The tools to do this work professionally and ethically</p>
+</section>
+<section id="questions-for-reflection" class="level2">
+<h2 class="anchored" data-anchor-id="questions-for-reflection">Questions for Reflection</h2>
+<p><strong>As you work with data this semester, ask:</strong></p>
+<ol type="1">
+<li><strong>What assumptions am I making</strong> in my data choices?</li>
+<li><strong>Who might be excluded</strong> from my analysis?</li>
+<li><strong>How could my findings be misused</strong> if taken out of context?</li>
+<li><strong>What would I want policymakers to understand</strong> about my methods?</li>
+</ol>
+<p>These questions will make you a <strong>more thoughtful analyst</strong> and <strong>better future policymaker</strong></p>
+<hr>
+</section>
+</section>
+<section id="next-steps" class="level1">
+<h1>Next Steps</h1>
+<section id="before-next-class" class="level2">
+<h2 class="anchored" data-anchor-id="before-next-class">Before Next Class</h2>
+<p><strong>Start Lab 1</strong> - census data exploration (begins today!) <strong>Aim to finish section 2</strong> - we will continue this work in class next week</p>
+</section>
+<section id="questions" class="level2">
+<h2 class="anchored" data-anchor-id="questions">Questions?</h2>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
