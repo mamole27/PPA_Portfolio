@@ -225,7 +225,7 @@ For each vulnerable tract, calculate the distance to the nearest hospital.
 #| results: 'hide'
 
 # Transform to appropriate projected CRS
-vulnerable_proj <- st_transform(vulnerable_proj, 2272)
+vulnerable_proj <- st_transform(vulnerable_tracts, 2272)
 hospitals_proj <- st_transform(hospitals, 2272)
 
 #tract centroids
@@ -339,7 +339,7 @@ county_summary <- vulnerable_proj %>%
 #join county names using FIPS column from shapefile
 county_summary <- county_summary %>%
   left_join(
-    pa_counties_proj %>%
+    pa_counties %>%
       st_drop_geometry() %>%
       mutate(FIPS_COUNT = sprintf("%05d", as.numeric(FIPS_COUNT))) %>%  # pad to 5 digits
       select(FIPS_COUNT, COUNTY_NAM),
@@ -357,7 +357,7 @@ county_population_far <- vulnerable_proj %>%
   group_by(county_fips) %>%
   summarise(vulnerable_people_far = sum(pop_65_plus, na.rm = TRUE)) %>%
   left_join(
-    pa_counties_proj %>%
+    pa_counties %>%
       st_drop_geometry() %>%
       mutate(FIPS_COUNT = sprintf("%05d", as.numeric(FIPS_COUNT))) %>%  # pad to 5 digits
       select(FIPS_COUNT, COUNTY_NAM),
@@ -478,7 +478,7 @@ Create a choropleth map showing healthcare access challenges at the county level
 # Create county-level access map
 
 #make counties and hospitals same CRS for plot
-county_map <- pa_counties_proj %>%
+county_map <- pa_counties %>%
   st_transform(4326) %>%
   left_join(
     county_summary %>%
