@@ -71,7 +71,7 @@ library(sf)
 library(here)
 
 # Load Boston housing data
-boston <- read_csv(here("data/boston.csv"))
+boston <- read_csv(here("lectures/boston.csv"))
 
 # Quick look at the data
 glimpse(boston)
@@ -225,7 +225,7 @@ class(boston.sf)  # Now shows "sf"
 #| echo: true
 
 # Load neighborhood boundaries
-nhoods <- read_sf(here("data/BPDA_Neighborhood_Boundaries.geojson")) %>%
+nhoods <- read_sf(here("lectures/BPDA_Neighborhood_Boundaries.geojson")) %>%
   st_transform('ESRI:102286')  # Match CRS!
 
 # Check the neighborhoods
@@ -1218,7 +1218,7 @@ How do we quantify "nearbyness" in a way our regression model can use?
 #| echo: false
 
 # load data
-bostonCrimes <- read_csv(here("data/bostonCrimes.csv"))
+bostonCrimes <- read_csv(here("lectures/bostonCrimes.csv"))
 glimpse(bostonCrimes)
 #previously set coordinate system, but if not use this code:
 #boston.sf <- boston %>% 
@@ -1231,7 +1231,7 @@ crimes.sf <- bostonCrimes %>%
   st_transform('ESRI:102286') %>%
   distinct()
 
-nhoods <- st_read(here("data/BPDA_Neighborhood_Boundaries.geojson")) %>%
+nhoods <- st_read(here("lectures/BPDA_Neighborhood_Boundaries.geojson")) %>%
   st_transform('ESRI:102286')
 
 # Quick check on projections - these should all be similar numbers
@@ -1604,7 +1604,6 @@ reg5 <- lm(SalePrice ~ LivingArea + Age + R_FULL_BTH +
                        crimes_500ft + crime_nn3+ dist_downtown_mi +
                        as.factor(name),
            data = boston.sf)
-
 
 library(modelsummary)
 
@@ -1984,17 +1983,27 @@ ggplot(boston.sf, aes(y = SalePrice)) +
 **Requirements:**
 
 1. Structural variables (including categorical)
+STYLE
+
 2. Spatial features (create your own - nhttps://data.boston.gov/group/geospatial
+PUBLIC SCHOOL
+
 3. At least one interaction term
+
 4. One non-linear (polynomial term)
+SQ FOOTAGE
+
 4. Neighborhood fixed effects (handle sparse categories!)
+
 5. 10-fold cross-validation
+
 6. Report final RMSE
 
 *Use diagnostics from last week as you build!*
 ---
 
 ## Report Out on Board
+
 
 **Each team will share (3 minutes):**
 
