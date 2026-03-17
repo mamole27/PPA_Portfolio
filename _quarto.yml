@@ -16,10 +16,14 @@ website:
           text: "Lab 1: Census Data Exploration"
         - href: labs/lab_2/lab_2.qmd
           text: "Lab 2: Spatial Analysis and Visualization"
-     # - text: Weekly Notes
-     #   menu:
-      #  - href: weeklynotes/path/path
-       #   text: "Week 1"
+      - text: Midterm Project
+        menu:
+          - href: labs/lab_3/Lab3-main/Lab3-main/slides.qmd
+            text: "Slides"          
+          - href: labs/lab_3/Lab3-main/Lab3-main/technical_appendix.qmd
+            text: "Technical Appendix"
+            
+  #https://github.com/mamole27/Lab3/slides.html
       
 
 format:

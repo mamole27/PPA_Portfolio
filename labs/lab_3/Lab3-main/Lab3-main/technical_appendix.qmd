@@ -1,0 +1,1212 @@
+---
+title: "Midterm Challenge: Philadelphia Housing Price Prediction"
+subtitle: "MUSA 5080 - Public Policy Analytics \nMackenna Amole, Gab Chen, Angie Kwon"
+format: 
+  html:
+    toc: true
+    toc-location: left
+    code-fold: show
+    theme: cosmo
+---
+
+### Phase 1: Data Preparation (Technical Appendix)
+
+```{r, results='hide'}
+#| include: false
+# install.packages("caret")
+
+library(sf)
+library(tigris)
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(caret)
+library(broom)
+library(lmtest)
+library(car)
+
+options(tigris_use_cache = TRUE)
+options(tigris_progress = FALSE)
+```
+
+```{r, results='hide'}
+#| message: false
+### Data cleaning done by Gab Chen-- clean dataset loaded directly for other group members
+# setwd("C:/Users/Gab/OneDrive/Documents/SPRING 2026/CPLN5920_PPA/Lab3")
+# 
+# # Load Property Sales Dataset
+#  sales_raw <- st_read("data/opa_properties_public.geojson")
+# 
+# # Convert date
+# sales_clean <- sales_raw %>%
+#    mutate(
+#      sale_date = as.Date(sale_date),
+#      sale_year = year(sale_date)
+#    )
+# 
+#  # Remove outliers
+#  sales_clean <- sales_clean %>%
+#    filter(
+#      sale_price > 10000,        # remove extremely low prices
+#      sale_price < 50000000,      # remove extreme luxury outliers
+#   )
+# 
+#  # Remove missing key fields
+#  sales_clean <- sales_clean %>%
+#    drop_na(
+#      sale_price,
+#      total_livable_area,
+#      number_of_bedrooms,
+#      number_of_bathrooms,
+#    )
+# 
+#  # Select necessary rows
+#  sales_clean <- sales_clean %>%
+#    select(
+#      category_code,
+#      category_code_description,
+#      garage_spaces,
+#      number_of_bathrooms,
+#      number_of_bedrooms,
+#      number_stories,
+#      total_livable_area,
+#      year_built,
+#      sale_year,
+#      sale_price,
+#      zip_code,
+#      geometry
+#    )
+# 
+#  # Filter to residential only
+#  sales_clean <- sales_clean %>%
+#    filter(
+#      grepl("1", category_code)
+#    )
+# 
+#  # Filter to 2023-2025 only
+#  sales_clean <- sales_clean %>%
+#    filter(sale_year >= 2023, sale_year <= 2024)
+# 
+# 
+#  # Save cleaned dataset
+#  saveRDS(sales_clean, "sales_clean.rds")
+# 
+#  # Summary table showing before and after
+#  tibble(
+#    Stage = c("Raw", "Cleaned"),
+#    N = c(nrow(sales_raw), nrow(sales_clean))
+#  )
+
+# Load cleaned dataset
+sales_clean <- readRDS("data/sales_clean.rds")
+
+# Load variables
+acs_vars_2024 <- load_variables(2024, "acs5", cache = TRUE)
+
+# Load secondary data on access + socioeconomics + amenities + spacial structure
+# Define ACS variables
+census_vars <- c(
+  med_income      = "B19013_001",   # Median household income
+  med_home_value  = "B25077_001",   # Median home value
+  
+  total_pop       = "B01003_001",   # Total population
+  poverty_count   = "B17001_002",   # Below poverty
+  poverty_total   = "B17001_001",   # Poverty universe
+  
+  total_edu       = "B15003_001",   # Education total
+  edu_bachelors   = "B15003_022",   # Bachelor's
+  edu_masters     = "B15003_023",
+  edu_prof        = "B15003_024",
+  edu_phd         = "B15003_025",
+  
+  tenure_total    = "B25003_001",   # Total occupied
+  owner_occupied  = "B25003_002",    # Owner occupied
+  
+  white = "B03002_003",
+  black = "B03002_004",
+  latinx = "B03002_012",
+  
+  total_workforce = "B08124_001",
+  car = "B08006_002", #commute
+  transit = "B08006_008",
+  bike = "B08006_014",
+  walk = "B08006_015",
+  remote = "B08006_017",
+
+  rent_3034 = "B25070_007",
+  rent_3539 = "B25070_008",
+  rent_4049 = "B25070_009",
+  rent_50 = "B25070_010"
+)
+
+# Pull census data
+phl_census <- get_acs(
+  geography = "tract",
+  variables = census_vars,
+  state = "PA",
+  county = "Philadelphia",
+  year = 2024,
+  survey = "acs5",
+  geometry = TRUE,
+  progress = FALSE
+)
+
+# Reshape and Mutate
+phl_census_wide <- phl_census %>%
+  select(GEOID, NAME, variable, estimate, geometry) %>% # Drop MOE
+  pivot_wider(names_from = variable, values_from = estimate) %>% # Pivot to wide table
+  mutate(
+    # % College educated (Bachelor’s and above)
+    pct_college = (
+      edu_bachelors + edu_masters + edu_prof + edu_phd
+    ) / total_edu,
+    
+    # Poverty rate
+    poverty_rate = poverty_count / poverty_total,
+    
+    # % Owner occupied
+    pct_owner_occ = owner_occupied / tenure_total,
+    
+    # % white
+    white = white/total_pop,
+    
+    # % black
+    black = black/total_pop,
+    
+    # % latinx
+    latinx = latinx/total_pop,
+    
+    # car commute
+    car = car/total_workforce,
+    
+    # transit commute
+    transit = transit/total_workforce,
+    
+    # bike commute
+    bike = bike/total_workforce,
+    
+    # walk commute
+    walk = walk/total_workforce,
+    
+    # remote commute
+    remote = remote/total_workforce,
+    
+    # % rent burden
+    pct_rent_burden = (rent_3034 + rent_3539 + rent_4049 + rent_50)/total_pop
+  ) %>%
+  select(
+    GEOID,
+    total_pop,
+    med_income,
+    med_home_value,
+    pct_college,
+    poverty_rate,
+    pct_owner_occ,
+    pct_rent_burden,
+    white,
+    black,
+    latinx,
+    car,
+    transit,
+    bike,
+    walk,
+    remote,
+    geometry
+  ) %>%
+  drop_na(
+    med_income,
+    med_home_value,
+    pct_college,
+    poverty_rate,
+    pct_owner_occ,
+    pct_rent_burden,
+    white,
+    black,
+    latinx,
+    car,
+    transit,
+    bike,
+    walk,
+    remote
+  )
+
+# Transit data on SEPTA bus/subways stops and regional rail stations: https://opendataphilly.org/datasets/septa-routes-stops-locations/
+stops <- st_read("data/Transit_Stops_(Spring_2025)/Transit_Stops_(Spring_2025).shp")
+
+# Parks/Green Space: https://opendataphilly.org/datasets/ppr-properties/
+parks <- st_read("data/PPR_Properties/PPR_Properties.shp")
+
+# Distance to Center City (anchor to city hall)
+city_hall <- st_as_sf(
+  data.frame(
+    name = "City Hall",
+    lon = -75.1636,
+    lat = 39.9526
+  ),
+  coords = c("lon", "lat"),
+  crs = 4326
+)
+
+# Schools: https://opendataphilly.org/datasets/schools/
+schools <- st_read("data/Schools/Schools.shp")
+
+# Crime: https://opendataphilly.org/datasets/crime-incidents/
+crime <- st_read("data/incidents_part1_part2/incidents_part1_part2.shp")
+
+# Crashes: https://opendataphilly.org/datasets/crashes/
+crash <- st_read("data/collision_crash_2020_2024/collision_crash_2020_2024.shp")
+
+# Landmarks: https://opendataphilly.org/datasets/city-landmarks/
+landmarks <- st_read("data/Landmark_Points/Landmark_Points.shp")
+
+# PA Hospitals: https://opendataphilly.org/datasets/pa-hospitals/
+hospitals <- st_read("data/DOH_Hospitals202311.geojson")
+
+# Neighborhoods: https://opendataphilly.org/datasets/philadelphia-neighborhoods/
+nb <- st_read("data/philadelphia-neighborhoods/philadelphia-neighborhoods.shp")
+
+# Convert sales data to sf
+sales_sf <- st_as_sf(
+  sales_clean,
+  coords = c("longitude", "latitude"),
+  crs = 4326
+)
+
+# Match CRS to NAD83 Pennsylvania South (feet), 2272
+sales_sf <- st_transform(sales_sf, 2272)
+phl_census_wide <- st_transform(phl_census_wide, 2272)
+stops  <- st_transform(stops, 2272)
+parks  <- st_transform(parks, 2272)
+city_hall <- st_transform(city_hall, 2272)
+schools <- st_transform(schools, 2272)
+crime <- st_transform(crime, 2272)
+crash <- st_transform(crash, 2272)
+landmarks <- st_transform(landmarks, 2272)
+hospitals <- st_transform(hospitals, 2272)
+nb <- st_transform(nb, 2272)
+
+# Join census data to sales_clean
+sales_sf <- st_join(sales_sf, phl_census_wide)
+# Spatial join: Assign each house to its neighborhood
+sales_sf <- sales_sf %>%
+  st_join(nb, join = st_intersects)
+  
+# Check results
+sales_sf %>%
+  st_drop_geometry() %>%
+  count(NAME) %>%
+  arrange(desc(n))
+
+```
+
+
+### Phase 2: Exploratory Data Analysis
+
+```{r}
+#| echo: true
+#| fig-show: hold
+
+# 1 Distribution of sale prices (histogram)
+ggplot(sales_sf, aes(x = sale_price)) +
+  geom_histogram(bins = 50) +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(
+    title = "Distribution of Sale Prices (Raw)",
+    x = "Sale Price",
+    y = "Count"
+  )
+```
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# Log sale price
+sales_sf <- sales_sf %>%
+  mutate(
+    log_price = log(sale_price)
+  )
+
+# 1 Distribution of log sale prices (histogram)
+ggplot(sales_sf, aes(x = log_price)) +
+  geom_histogram(bins = 50) +
+  labs( 
+    title = "Distribution of Log Sale Prices",
+    x = "Log(Sale Price)",
+    y = "Count"
+  )
+```
+Interpretation: Raw prices are heavily right-skewed, meaning there are a lot of expensive outliers in our housing sale price data. Log transformation produces a more symmetric distribution suitable for regression modeling.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 2 Geographic distribution (map)
+ggplot(sales_sf) +
+  geom_sf(aes(color = log_price)) +
+  scale_color_viridis_c() +
+  labs(title = "Spatial Distribution of Home Prices (Log Scale)")+
+  theme_minimal()
+```
+Interpretation: Home prices exhibit strong spatial clustering across Philadelphia.Higher-priced properties concentrate in Center City and Northwest neighborhoods, while lower-priced homes are more prevalent in North and West Philadelphia.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 3 Price v. structural features (scatter plots)
+# 3 Price v. total livable area
+ggplot(sales_sf, aes(total_livable_area, log_price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "loess") +
+  labs(
+    title = "Sale Price vs. Living Area",
+    x = "Living Area (sq ft)",
+    y = "Log(Sale Price)"
+  )
+```
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 4 Price v. spatial feature (scatter plots)
+# 4 Price v. distance to downtown
+sales_sf <- sales_sf %>%
+  mutate(
+    dist_downtown_ft = as.numeric(st_distance(geometry, city_hall)),
+    dist_downtown_mi = dist_downtown_ft / 5280
+  ) # Calculate distance to city hall
+
+ggplot(sales_sf, aes(dist_downtown_mi, log_price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  labs(
+    title = "Price Gradient from Center City",
+    x = "Distance to City Hall (miles)",
+    y = "Log(Sale Price)"
+  )
+```
+Interpretation: The relationship between distance to City Hall and log sale price is nonlinear. Prices decline sharply within the first 2-4 miles from city hall, but begin to recover in outer neighborhoods.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 4 Price v. spatial features (scatter plots)
+# 4 Price v. distance to transit stops
+stops_dist <- st_distance(sales_sf, stops) # Calculate distance to transit stops
+
+get_knn_distance <- function(stops_dist, k) {
+  apply(stops_dist, 1, function(distances){
+    mean(as.numeric(sort(distances)[1:k]))
+  })
+} # Create function
+
+sales_sf <- sales_sf %>%
+  mutate(
+    stops_nn1 = get_knn_distance(stops_dist, k= 1),
+    stops_nn3 = get_knn_distance(stops_dist, k= 3),
+    stops_nn5 = get_knn_distance(stops_dist, k= 5)
+  ) # Create features
+
+ggplot(sales_sf, aes(stops_nn1, log_price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  labs(
+    title = "Price Gradient from Nearest Transit Stops",
+    x = "Distance to Transit Stops (feet)",
+    y = "Log(Sale Price)"
+  )
+```
+Interpretation: The relationship between distance to the nearest transit stop and sale price is nonlinear. Properties located extremely close to transit exhibit slightly lower prices, potentially reflecting noise or traffic externalities. Prices increase within a moderate walking distance range (500-1500ft), suggesting an accessibility premium. The relationship becomes unstable beyond 2000 ft due to limited observations.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 4 Price v. distance to schools
+schools_dist <- st_distance(sales_sf, schools) # Calculate distance to schools
+
+get_knn_distance <- function(schools_dist, k) {
+  apply(schools_dist, 1, function(distances){
+    mean(as.numeric(sort(distances)[1:k]))
+  })
+} # Create function
+
+sales_sf <- sales_sf %>%
+  mutate(
+    schools_nn1 = get_knn_distance(schools_dist, k= 1),
+    schools_nn3 = get_knn_distance(schools_dist, k= 3),
+    schools_nn5 = get_knn_distance(schools_dist, k= 5)
+  ) # Create features
+
+ggplot(sales_sf, aes(schools_nn1, log_price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  labs(
+    title = "Price Gradient from Nearest Schools",
+    x = "Distance to Schools (feet)",
+    y = "Log(Sale Price)"
+  )
+```
+Interpretation: The relationship between distance to the nearest schools and sale price is relatively weak and nonlinear. Properties immediately adjacent to schools do not exhibit a strong premium. Moderate proximity (2000-4000ft) is associated with slightly higher prices.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 4 Price v. distance to parks
+parks_dist <- st_distance(sales_sf, parks) # Calculate distance to parks
+
+get_knn_distance <- function(parks_dist, k) {
+  apply(parks_dist, 1, function(distances){
+    mean(as.numeric(sort(distances)[1:k]))
+  })
+} # Create function
+
+sales_sf <- sales_sf %>%
+  mutate(
+    parks_nn1 = get_knn_distance(parks_dist, k= 1),
+    parks_nn3 = get_knn_distance(parks_dist, k= 3),
+    parks_nn5 = get_knn_distance(parks_dist, k= 5)
+  ) # Create features
+
+ggplot(sales_sf, aes(parks_nn1, log_price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  labs(
+    title = "Price Gradient from Nearest Parks",
+    x = "Distance to Parks (feet)",
+    y = "Log(Sale Price)"
+  )
+```
+Interpretation: The relationship between distance to the nearest park and sale price is weak and nonlinear. Properties immediately adjacent to parks show a small premium, but the advantage flattens quickly beyond 1000ft. This suggests that park proximity may confer localized amenity benefits, but its explanatory power to sale price is limited to external factors.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 5 Price by income quantile
+sales_sf %>%
+  filter(!is.na(med_income)) %>%   # drop NA
+  mutate(
+    income_q = ntile(med_income, 4),
+    income_q = factor(
+      income_q,
+      levels = 1:4,
+      labels = c(
+        "Lowest Income",
+        "Lower-Middle",
+        "Upper-Middle",
+        "Highest Income"
+      )
+    )
+  ) %>%
+  ggplot(aes(income_q, log_price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.6) +
+  labs(
+    title = "Home Prices by Neighborhood Income Quartile",
+    x = "Income Quartile",
+    y = "Log(Sale Price)"
+  ) +
+  theme_minimal()
+```
+Interpretation: Sale prices increase monotonically across neighborhood income quartiles. The median log sale price in the highest-income quartile is substantially higher than in the lowest-income quartile, indicating strong neighborhood-level stratification in the housing market.
+
+```{r}
+#| echo: true
+#| fig-show: hold
+# 5 Price by neighborhood
+neighborhood_price <- sales_sf %>%
+  st_drop_geometry() %>%
+  group_by(NAME) %>%
+  summarise(
+    median_price = median(sale_price, na.rm = TRUE)
+  ) # Calculate median price by neighborhood
+
+nb_map <- nb %>%
+  left_join(neighborhood_price, by = "NAME") # Sptial join
+
+ggplot(nb_map) +
+  geom_sf(aes(fill = median_price), color = "white", linewidth = 0.3) +
+  scale_fill_viridis_c(labels = scales::dollar) +
+  labs(
+    title = "Median Sale Price by Neighborhood",
+    fill = "Median Price"
+  ) +
+  theme_minimal()
+
+```
+
+### Phase 3: Feature Engineering (Technical Appendix)
+
+```{r}
+#buffer-based
+# number of parks/schools/transit stops within 0.25 or 0.5 or 1 or 2 miles
+# crime
+# car crashes
+# hospitals
+# monuments
+
+#census variables
+# income
+# education
+# poverty
+# owner occ
+# % rent burden
+
+#interaction terms
+# does crime rate matter more in low-income neighborhoods (or high-income) -- potential for price to drop in
+#     high-income is higher, but low-income may be penalized more for frequency?
+# distance to park * income (might be less or more of an incentive in low-income neighborhoods)
+# distance to CC * # of transit stops -- less important for ppl far away from center city?
+# distance to landmarks * sqf -- more premium in historically sig areas
+# distance to city hall * sqf -- sqf values more in central areas
+# built year * sqf -- sqf values more in the modern and the most historic homes
+
+# 0.5 miles -- 10 mins walking
+# 0.25 miles -- 5 mins walking
+
+#BUFFER-BASED
+# Flag homes with number of parks within 2 miles
+# Parks provide recreational space, environmental quality, and aesthetic value, which can increase nearby property desirability and housing prices.
+sales_sf <- sales_sf %>%
+  mutate(
+    parks_2m = lengths(st_intersects(
+      st_buffer(geometry, 10560),
+      parks)),
+    parks_1m = lengths(st_intersects(
+      st_buffer(geometry, 5280),
+      parks)),
+    parks_05m = lengths(st_intersects(
+      st_buffer(geometry, 2640),
+      parks)),
+    parks_025m = lengths(st_intersects(
+      st_buffer(geometry, 1320),
+      parks))
+  )
+
+# Calculate distance from each house to nearest park
+nearest_index <- st_nearest_feature(sales_sf, parks)
+nearest_dist <- st_distance(sales_sf, parks[nearest_index,],
+                            by_element = TRUE)
+sales_sf$nearest_park <- as.numeric(nearest_dist/5280) #make it in miles
+
+# Flag homes with number of transit stops within 0.25 miles
+# Proximity to transit improves accessibility to jobs and services, often increasing property values within walkable distance.
+sales_sf <- sales_sf %>%
+  mutate(
+    transit_025m = lengths(st_intersects(
+      st_buffer(geometry, 1320),
+      stops
+      ))
+  )
+
+# Flag homes with number of schools within 2 miles
+# Access to schools is a key factor for households, especially families, and is often associated with higher housing demand and prices.
+sales_sf <- sales_sf %>%
+  mutate(
+    schools_2m = lengths(st_intersects(
+      st_buffer(geometry, 10560),
+      schools
+      ))
+  )
+
+# Flag homes with number of crime incidents within 0.25 miles
+# Higher crime levels reduce perceived safety and neighborhood desirability, typically leading to lower property values.
+sales_sf <- sales_sf %>%
+  mutate(
+    crime_025m = lengths(st_intersects(
+      st_buffer(geometry, 1320),
+      crime
+      ))
+  )
+
+# Flag homes with number of car crashes within 0.25 miles
+# High crash density may indicate traffic congestion and unsafe street conditions, negatively affecting residential desirability.
+sales_sf <- sales_sf %>%
+  mutate(
+    crash_025m = lengths(st_intersects(
+      st_buffer(geometry, 1320),
+      crash
+      ))
+  )
+
+# Flag homes with number of hospitals within 2 miles
+# Proximity to healthcare facilities improves accessibility to essential services, though effects may vary depending on noise and traffic.
+sales_sf <- sales_sf %>%
+  mutate(
+    hospitals_2m = lengths(st_intersects(
+      st_buffer(geometry, 10560),
+      hospitals
+      ))
+  )
+
+# Flag homes with number of landmarks within 0.5 miles
+# Cultural and historic landmarks enhance neighborhood identity and attractiveness, potentially increasing nearby property values.
+sales_sf <- sales_sf %>%
+  mutate(
+    landmarks_05m = lengths(st_intersects(
+      st_buffer(geometry, 2640),
+      landmarks
+      ))
+  )
+
+### Ultimately not used -- commented off for the sake of running the program
+# # Create Missing KNN (landmarks, crashes, crimes, hospitals)
+# landmarks_dist <- st_distance(sales_sf, landmarks) # Calculate distance to landmarks
+# get_knn_distance <- function(landmarks_dist, k) {
+#   apply(landmarks_dist, 1, function(distances){
+#     mean(as.numeric(sort(distances)[1:k]))
+#   })
+# } # Create function
+# sales_sf <- sales_sf %>%
+#   mutate(
+#     landmarks_nn1 = get_knn_distance(landmarks_dist, k= 1),
+#     landmarks_nn3 = get_knn_distance(landmarks_dist, k= 3),
+#     landmarks_nn5 = get_knn_distance(landmarks_dist, k= 5)
+#   ) # Create feature
+# 
+# crash_dist <- st_distance(sales_sf, crash) # Calculate distance to car crashes
+# get_knn_distance <- function(crash_dist, k) {
+#   apply(crash_dist, 1, function(distances){
+#     mean(as.numeric(sort(distances)[1:k]))
+#   })
+# } # Create function
+# sales_sf <- sales_sf %>%
+#   mutate(
+#     crash_nn1 = get_knn_distance(crash_dist, k= 1),
+#     crash_nn3 = get_knn_distance(crash_dist, k= 3),
+#     crash_nn5 = get_knn_distance(crash_dist, k= 5)
+#   ) # Create feature
+# 
+# crime_dist <- st_distance(sales_sf, crime) # Calculate distance to crimes
+# get_knn_distance <- function(crime_dist, k) {
+#   apply(crime_dist, 1, function(distances){
+#     mean(as.numeric(sort(distances)[1:k]))
+#   })
+# } # Create function
+# sales_sf <- sales_sf %>%
+#   mutate(
+#     crime_nn1 = get_knn_distance(crime_dist, k= 1),
+#     crime_nn3 = get_knn_distance(crime_dist, k= 3),
+#     crime_nn5 = get_knn_distance(crime_dist, k= 5)
+#   ) # Create feature
+
+# Create wealth dummy variable
+sales_sf <- sales_sf %>%
+  mutate(wealth = case_when(
+    med_income < 45000 ~ "low",
+    med_income > 90000 ~ "high",
+    TRUE ~ "medium"
+  ))
+# Create age variable
+sales_sf <- sales_sf %>%
+  mutate(
+    age = 2026 - as.numeric(year_built)
+  )
+# Neighborhood fixed effect
+# Ensure name is a factor (i.e., categorical variable)
+sales_sf <- sales_sf %>%
+  mutate(NAME = as.factor(NAME))
+
+# Check which is reference (first alphabetically)
+levels(sales_sf$NAME)[1]
+
+###Commented off to ensure program runs, but used to determine which variable impacts sales price the most
+# # Check which variable has the most impact on sales price
+# sales_sf %>%
+#   st_drop_geometry() %>%
+#   select(sale_price, stops_nn1, stops_nn3, stops_nn5, transit_025m) %>%
+#   cor(use = "complete.obs") %>%
+#   as.data.frame() %>%
+#   select(sale_price)
+# cat("transit_025m has the largest coorelation with sale_price")
+# 
+# sales_sf %>%
+#   st_drop_geometry() %>%
+#   select(sale_price, schools_nn1, schools_nn3, schools_nn5, schools_2m) %>%
+#   cor(use = "complete.obs") %>%
+#   as.data.frame() %>%
+#   select(sale_price)
+# cat("schools_2m has the largest coorelation with sale_price")
+# 
+# sales_sf %>%
+#   st_drop_geometry() %>%
+#   select(sale_price, parks_nn1, parks_nn3, parks_nn5, parks_2m, parks_025m, parks_05m, parks_1m, nearest_park) %>%
+#   cor(use = "complete.obs") %>%
+#   as.data.frame() %>%
+#   select(sale_price)
+# cat("park_1m has the largest coorelation with sale_price")
+# 
+# sales_sf %>%
+#   st_drop_geometry() %>%
+#   select(sale_price, landmarks_nn1, landmarks_nn3, landmarks_nn5, landmarks_05m) %>%
+#   cor(use = "complete.obs") %>%
+#   as.data.frame() %>%
+#   select(sale_price)
+# cat("landmarks_05m has the largest coorelation with sale_price")
+# 
+# sales_sf %>%
+#   st_drop_geometry() %>%
+#   select(sale_price, crash_nn1, crash_nn3, crash_nn5, crash_025m) %>%
+#   cor(use = "complete.obs") %>%
+#   as.data.frame() %>%
+#   select(sale_price)
+# cat("crash_025m has the largest coorelation with sale_price")
+
+# Population Density
+sales_sf <- sales_sf %>%
+  mutate(pop_density = total_pop/Shape_Area)
+
+# Log sale price
+sales_sf <- sales_sf %>%
+  mutate(log_sale_price = log(sale_price))
+```
+
+
+### Phase 4: Model Building
+
+**Build models progressively:**
+
+1. Structural features only
+2. + Census variables
+3. + Spatial features
+4. + Interactions and fixed effects
+
+```{r}
+# Structural features only
+# model1 <- lm(formula = sale_price ~ total_livable_area, data = sales_sf)
+# summary(model1)
+model2 <- lm(formula = log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age, data = sales_sf)
+summary(model2)
+
+# + Census variables
+# model3 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ #census
+# , data = sales_sf)
+# summary(model3)
+model3_2 <- lm(formula = log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ 
++ pct_rent_burden + white + black + latinx + car + transit + remote + pop_density #census
+, data = sales_sf)
+summary(model3_2)
+
+# + Spatial features
+model4 <- lm(formula = log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ 
++ pct_rent_burden + white + black + latinx + car + transit + remote + pop_density #census
++ parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+, data = sales_sf)
+summary(model4)
+
+# Interactions + fixed effects
+# model5 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME
+# , data = sales_sf)
+# summary(model5)
+
+# 2
+# Interactions + fixed effects
+# does crime rate matter more in low-income neighborhoods (or high-income) -- potential for price to drop in
+#     high-income is higher, but low-income may be penalized more for frequency?
+# distance to park * income (might be less or more of an incentive in low-income neighborhoods)
+# distance to CC * # of transit stops -- less important for ppl far away from center city?
+# distance to landmarks * sqf -- more premium in historically sig areas
+# distance to city hall * sqf -- sqf values more in central areas
+# built year * sqf -- sqf values more in the modern and the most historic homes
+
+# model5_2 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + crime_025m*med_income #interaction
+# , data = sales_sf)
+# summary(model5_2)
+# 
+# model5_3 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + parks_2m*med_income #interaction
+# , data = sales_sf)
+# summary(model5_3)
+# 
+# model5_4 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + dist_downtown_mi*transit_025m #interaction
+# , data = sales_sf)
+# summary(model5_4)
+# 
+# model5_5 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + landmarks_05m*total_livable_area #interaction
+# , data = sales_sf)
+# summary(model5_5)
+# #0.4736
+# 
+# model5_6 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + dist_downtown_mi*total_livable_area #interaction
+# , data = sales_sf)
+# summary(model5_6)
+# #0.436
+# 
+# model5_7 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + age*total_livable_area #interaction
+# , data = sales_sf)
+# summary(model5_7)
+# 
+# model5_8 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + landmarks_05m*total_livable_area
+# + dist_downtown_mi*transit_025m #interaction
+# , data = sales_sf)
+# summary(model5_8)
+# 
+# model6_2 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + landmarks_05m*total_livable_area
+# + dist_downtown_mi*transit_025m #interaction
+# + I(age^2)
+# , data = sales_sf)
+# summary(model6_2)
+# #0.471
+# 
+# model6_3 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + landmarks_05m*total_livable_area
+# + dist_downtown_mi*transit_025m #interaction
+# + dist_downtown_mi + I(dist_downtown_mi^2)
+# , data = sales_sf)
+# summary(model6_3)
+# #0.4704
+# 
+# model6_4 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixed effect
+# + landmarks_05m*total_livable_area
+# + dist_downtown_mi*transit_025m #interaction
+# + I(age^2)
+# , data = sales_sf)
+# summary(model6_4)
+# #0.471
+# 
+# model6_5 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ 
+# + pct_rent_burden + white + black + latinx + car + transit + remote + pop_density#census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixedeffect
+# + crime_025m*med_income
+# + parks_2m*med_income
+# + landmarks_05m*total_livable_area
+# + dist_downtown_mi*transit_025m
+# + dist_downtown_mi*total_livable_area 
+# + age*total_livable_area #interaction
+# + pct_owner_occ*total_livable_area
+# + number_stories*med_income
+# + I(age^2)
+# + dist_downtown_mi + I(dist_downtown_mi^2)
+# , data = sales_sf)
+# summary(model6_5)
+# #0.4763
+
+##FINAL###
+model6_5 <- lm(formula = log_sale_price ~ total_livable_area + number_of_bathrooms + age #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ + white + black + car + transit + remote + pop_density #census
++ parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
++ NAME #fixedeffect
++ crime_025m*med_income
++ parks_2m*med_income
++ landmarks_05m*total_livable_area
++ dist_downtown_mi*transit_025m
++ dist_downtown_mi*total_livable_area 
++ age*total_livable_area #interaction
++ pct_owner_occ*total_livable_area
++ pct_rent_burden*black
++ number_stories*med_income
++ I(age^2)
++ dist_downtown_mi + I(dist_downtown_mi^2)
+, data = sales_sf)
+summary(model6_5)
+#0.5935
+
+##FINAL addressing multicolinearity###
+model6_6 <- lm(formula = log_sale_price ~ total_livable_area + number_of_bathrooms + age #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ + white + black + car + transit + remote + pop_density #census
++ transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
++ NAME #fixedeffect
++ crime_025m*med_income
++ landmarks_05m*total_livable_area
++ age*total_livable_area #interaction
++ pct_owner_occ*total_livable_area
++ pct_rent_burden*black
++ number_stories*med_income
++ I(age^2)
+, data = sales_sf)
+summary(model6_6)
+#0.5934
+
+# model6 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age #structural
+# + med_income + pct_college + poverty_rate + pct_owner_occ #census
+# + parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+# + NAME #fixed
+# + (transit_025m * dist_downtown_mi)
+# , data = sales_sf)
+# summary(model6)
+# 
+# model5 <- lm(formula = sale_price ~ total_livable_area + med_income + (total_livable_area * wealth) + crime_05m + (transit_025m * dist_downtown_mi), data = sales_sf)
+# summary(model5)
+# 
+# model6 <- lm(formula = sale_price ~ total_livable_area + med_income + (total_livable_area * wealth) + crime_05m + (transit_025m * dist_downtown_mi) + (parks_05m * wealth), data = sales_sf)
+# summary(model6)
+# 
+# model7 <- lm(formula = sale_price ~ total_livable_area + med_income + crime_05m + (total_livable_area * wealth) + (transit_025m * dist_downtown_mi) + (parks_05m * wealth) + (schools_nn3 * wealth) + (landmarks_nn3 * wealth), data = sales_sf)
+# summary(model7)
+# 
+# model8 <- lm(formula = sale_price ~ total_livable_area + med_income + crime_05m + (total_livable_area * wealth) + (transit_025m * dist_downtown_mi) + (parks_05m * wealth) + (schools_nn3 * wealth) + (landmarks_nn3 * wealth) + age + I(age^2), data = sales_sf)
+# summary(model8)
+# 
+# model9 <- lm(formula = sale_price ~ total_livable_area + med_income + poverty_rate + crime_05m + (total_livable_area * wealth) + (transit_025m * dist_downtown_mi) + (parks_05m * wealth) + (stops_nn1 * dist_downtown_mi) + (schools_nn3 * wealth) + (landmarks_nn3 * wealth) + age + I(age^2), data = sales_sf)
+# summary(model9)
+# 
+# model10 <- lm(formula = sale_price ~ total_livable_area + med_income + poverty_rate + crime_05m + (total_livable_area * wealth) + (transit_025m * dist_downtown_mi) + (parks_05m * wealth) + (stops_nn1 * dist_downtown_mi) + (schools_nn3 * wealth) + (landmarks_nn3 * wealth) + age + I(age^2) + as.factor(wealth), data = sales_sf)
+# summary(model10)
+# 
+# model_all <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + med_income + pct_college+ poverty_rate + pct_owner_occ + dist_downtown_mi + stops_nn3 + schools_nn3 + landmarks_nn3 + parks_nn3 + transit_025m + schools_2m + crash_025m + crime_05m + hospitals_2m + landmarks_05m, data = sales_sf)
+# summary(model_all)
+# 
+# model_all2 <- lm(formula = sale_price ~ total_livable_area + number_of_bathrooms + number_stories + pct_college+ poverty_rate + dist_downtown_mi + transit_025m + schools_2m + crash_025m + crime_05m + hospitals_2m + landmarks_05m, data = sales_sf)
+# summary(model_all2)
+
+```
+
+
+### Phase 5: Model Validation
+
+**Use 10-fold cross-validation:**
+- Compare all 4 models
+- Report RMSE, MAE, R² for each
+- Create predicted vs. actual plot
+
+
+```{r}
+#| eval: true
+#| echo: true
+#| warning: false
+
+category_check <- sales_sf %>% 
+  st_drop_geometry() %>%
+  count(NAME) %>%
+  arrange(n)
+print(category_check)
+
+ctrl <- trainControl(
+  method = "cv",
+  number = 10,  # 10-fold CV
+  savePredictions = "final"
+)
+
+# Step 1: Add count column
+sales_sf <- sales_sf %>%
+  add_count(NAME)
+# Step 2: Group small neighborhoods
+sales_sf <- sales_sf %>%
+  mutate(
+    name_cv = if_else(
+      n < 10,                       # If fewer than 10 sales
+      "Small_Neighborhoods",        # Group them
+      as.character(NAME)            # Keep original
+    ),
+    name_cv = as.factor(name_cv)
+  )
+  
+# Step 3: Use grouped version in CV
+
+#structural
+cv_m1 <- train(
+  log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age + as.factor(name_cv), data = sales_sf, method = "lm", trControl = ctrl
+)
+
+#census
+cv_m2 <- train(
+  log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age + as.factor(name_cv) #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ 
++ pct_rent_burden + white + black + latinx + car + transit + remote + pop_density #census
+, data = sales_sf, method = "lm", trControl = ctrl, na.action = na.omit
+)
+
+#spatial
+cv_m3 <- train(
+  log_sale_price ~ total_livable_area + number_of_bathrooms + number_of_bedrooms + number_stories + age + as.factor(name_cv) #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ 
++ pct_rent_burden + white + black + latinx + car + transit + remote + pop_density #census
++ parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
+, data = sales_sf, method = "lm", trControl = ctrl, na.action = na.omit
+)
+
+#fixed effect, interaction, nonlinear
+cv_m4 <- train(
+  log_sale_price ~ total_livable_area + number_of_bathrooms + age + as.factor(name_cv) #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ + white + black + car + transit + remote + pop_density #census
++ parks_2m + transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
++ NAME #fixedeffect
++ crime_025m*med_income
++ parks_2m*med_income
++ landmarks_05m*total_livable_area
++ dist_downtown_mi*transit_025m
++ dist_downtown_mi*total_livable_area 
++ age*total_livable_area #interaction
++ pct_owner_occ*total_livable_area
++ pct_rent_burden*black
++ number_stories*med_income
++ I(age^2)
++ dist_downtown_mi + I(dist_downtown_mi^2)
+, data = sales_sf, method = "lm", trControl = ctrl, na.action = na.omit
+)
+
+#fixed effect, interaction, nonlinear -- addressed multicolinearity
+cv_m5 <- train(
+log_sale_price ~ total_livable_area + number_of_bathrooms + age #structural
++ med_income + pct_college + poverty_rate + pct_owner_occ + white + black + car + transit + remote + pop_density #census
++ transit_025m + schools_2m + crime_025m + crash_025m + hospitals_2m + landmarks_05m #spatial
++ NAME #fixedeffect
++ crime_025m*med_income
++ landmarks_05m*total_livable_area
++ age*total_livable_area #interaction
++ pct_owner_occ*total_livable_area
++ pct_rent_burden*black
++ number_stories*med_income
++ I(age^2)
+, data = sales_sf, method = "lm", trControl = ctrl, na.action = na.omit
+)
+
+# Extract predictions
+cv_results <- cv_m4$pred
+
+# Make sure it's numeric
+cv_results$obs <- as.numeric(cv_results$obs)
+cv_results$pred <- as.numeric(cv_results$pred)
+
+# Plot predicted v. actual
+
+ggplot(cv_results, aes(x = obs, y = pred)) +
+  geom_point(alpha = 0.15, color = "steelblue") +
+  geom_abline(slope = 1, intercept = 0, color = "darkred", linewidth = 1) +
+  coord_equal() +   # important
+  labs(
+    title = "Model Performance: Predicted vs Actual",
+    subtitle = "10-Fold Cross Validation (Model 4)",
+    x = "Actual Log Price",
+    y = "Predicted Log Price"
+  ) +
+  theme_minimal()
+
+tibble(
+  Model = c("Structural", "Census", "Spatial", "Fixed Effects"),
+  RMSE = c(cv_m1$results$RMSE, cv_m2$results$RMSE, cv_m3$results$RMSE, cv_m5$results$RMSE)
+)
+
+tibble(
+  Model = c("Structural", "Census", "Spatial", "Fixed Effects"),
+  MAE = c(cv_m1$results$MAE, cv_m2$results$MAE, cv_m3$results$MAE, cv_m5$results$MAE)
+)
+
+```
+Discussion: What Features Matter Most: Cross-validation results show that model performance improves as additional feature groups are introduced. The largest gains occur when moving from structural features to models that incorporate neighborhood socioeconomic characteristics. Neighborhood fixed effects also provide a significant further improvement, capturing unobserved spatial heterogeneity that is not fully explained by observed variables.
+
+### Phase 6: Model Diagnostics (Technical Appendix Only)
+
+**Check assumptions for best model:**
+
+- Residual plot (linearity, homoscedasticity)
+- Q-Q plot (normality)
+- Cook's distance (influential observations)
+
+The diagnostic plots reveal heteroscedasticity and some deviation in the tails from normality in residuals. Cook’s distance suggests no highly influential observations. We took note of these violations and interpreted our results accordingly.
+
+```{r}
+## Residuals -- linearity assumption
+plot_df <- augment(model6_6)
+ggplot(plot_df, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals Plot",
+       x = "Fitted Values",
+       y = "Residuals") +
+  theme_minimal()
+```
+This residual plot shows random scatter close to the central line, but there seems to be a broad pattern as you move further away from it. There seem to be a small number of odd residuals influencing the shape. This linearity assumption isn't 100% met, but seems to be tentatively met due to the odd pattern being influenced by a couple of small points.
+
+```{r}
+## QQ Plot -- normality of residuals
+ggplot(data.frame(res = residuals(model6_6)), aes(sample = res)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot of Residuals",
+       x = "Theoretical Quantiles",
+       y = "Sample Quantiles") +
+  theme_minimal()
+```
+The Q-Q plot shows that the residuals are normal enough for the most part, until it shoots out as the quantiles get larger. This also allows us to tentatively proceed with the normality assumption.
+
+```{r}
+## Breusch-Pagan -- constant variance/heteroskedasticity
+bptest(model6_6)
+```
+The Breusch-Pagan test shows us a p-value of less than 0.05, meaning heteroskedasticity is present, meaning we cannot assume constant variance.
+
+```{r}
+## Variane Inflation Factor -- multicolinearity
+vif(model6_6)
+```
+All variables' variance inflation factor is less than 10, meaning there is no concerning multicolinearity.
+
+```{r}
+## Cook's D -- no influential outliers
+plot_df <- data.frame(
+  obs = 1:length(cooks.distance(model6_6)),
+  cooks_d = cooks.distance(model6_6)
+)
+ggplot(plot_df, aes(x = obs, y = cooks_d)) +
+  geom_col() +
+  geom_hline(yintercept = 4/nrow(plot_df), color = "red", linetype = "dashed") +
+  labs(title = "Cook's Distance",
+       x = "Observation",
+       y = "Cook's Distance") +
+  theme_minimal()
+
+```
+The Cook's Distance test shows there are no influential outliers, which means there are no outliers singlehandedly influencing the entire model's course.
+
+### Phase 7: Conclusions & Recommendations
+
+The final model had a RMSE of 0.59 (log scale), indicating that the model's predicted values are typically within 0.59 units of the observed housing sales price on a log scale. The features that mattered most of Philadelphia prices were total livable area, number of bathrooms, age of the housing unit, percent college educated population of the census tract, percent White population of the county, percent Black population of the census tract, vehicular crashes within 0.25 miles, landmarks within 0.5 miles, interaction of total livable area with landmarks within 0.5 miles, and interaction of total livable area with percent owner occupied population of the census tract All of these variables had a p-value of less than 0.01, indicating that these variables are very strongly associated with the sales price.
+
+There were several neighborhoods with fewer than 10 housing units, which makes those harder to predict, especially as several diagnostic tests had to be conducted with them combined. This underprioritizes areas with lower population. Also, the different races being a significant predictor for sales price is a point of concern, as in an ideal city, race would have little to no impact. This points to the fact that there is a sizeable difference in census tracts with different racial compositions and this is something to be way of, as this may be a sign of generational racialized poverty or impending gentrification. There is also a strong association with number of landmarks within 0.5 miles of the house, which can show that if sales prices are higher near landmarks, those areas will be more of a priority to developers. Historic neighborhoods are traditionally wealthier, as they have been preserved for longer and thereby have prestige, and this can be a reinforcing cycle, which may lead to history being prioritized over present people.
+
+The most severe limitations of our final model is that not all assumptions were confidently met and the model requires many different types of variables which can be costly time and cost-wise. The assumptions being met tentatively or barely at all, means that the model can't be too reliably used to predict the sales price, making it an unreliable tool that may be wrong. The requirement of many different variables mean that to predict sales prices using this model is a costly process, both with time and money. It requires different types of variables, all of which are data collected from vastly different sources using different methods. This is a lot of effort to put into a model that is not the strongest.
+
