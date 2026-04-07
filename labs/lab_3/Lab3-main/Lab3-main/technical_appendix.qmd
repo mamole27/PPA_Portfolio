@@ -1,4 +1,4 @@
----
+nb  ---
 title: "Midterm Challenge: Philadelphia Housing Price Prediction"
 subtitle: "MUSA 5080 - Public Policy Analytics \nMackenna Amole, Gab Chen, Angie Kwon"
 format: 
