@@ -51,9 +51,9 @@ Sanitation 311 violations were selected because they reflect neighborhood-level 
 #| results: 'hide'
 
 #install - comment out later
-install.packages("spatstat.explore")
-install.packages("spatstat.geom")
-install.packages("viridis")
+# install.packages("spatstat.explore")
+# install.packages("spatstat.geom")
+# install.packages("viridis")
 
 # Load required packages
 library(tidyverse)
@@ -136,15 +136,24 @@ glimpse(sanitation)
 cat("Number of sanitation requests:", nrow(sanitation), "\n")
 ```
 
-```{r sum stats}
-# Summary statistics
-summary(fishnet_model$countSanitation)
+```{r sum-stats-section1}
+# Basic summary stats of raw 311 data
 
-mean(fishnet_model$countSanitation)
-sd(fishnet_model$countSanitation)
-range(fishnet_model$countSanitation)
+cat("Summary of Sanitation 311 Data:\n")
 
+# Total observations
+cat("Total requests:", nrow(sanitation), "\n\n")
+
+# Since it's point data, we summarize spatial + temporal fields if available
+summary(st_coordinates(sanitation))
+
+# If your dataset has dates (VERY likely)
+if ("Creation Date" %in% names(sanitation)) {
+  cat("\nDate range:\n")
+  print(range(sanitation$`Creation Date`, na.rm = TRUE))
+}
 ```
+
 -   1.2: Create visualizations showing the spatial distribution of violation type
 
 I created visualizations of the locations of sanitation violations and also created a kernel density estimation surface to visualize clustering/distribution. This step provides an initial understanding of spatial patterns before modeling/experimenting with interactions. These visuals allow us to identify clustering patterns and potential spatial dependence. The violations do not appear to be evenly distributed across Chicago. Instead, they are highly clustered in specific geographic areas. The KDE visual shows where the concentrations of sanitation violations are.
@@ -226,6 +235,15 @@ ggplot() +
   geom_sf(data = chicagoBoundary, fill = NA, color = "white") +
   scale_fill_viridis_c(trans = "sqrt") +
   labs(title = "Sanitation Requests by Grid Cell")
+
+```
+
+```{r count-summary}
+summary(fishnet$countSanitation)
+
+cat("\nMean:", mean(fishnet$countSanitation))
+cat("\nSD:", sd(fishnet$countSanitation))
+cat("\nRange:", range(fishnet$countSanitation))
 
 ```
 
@@ -365,6 +383,16 @@ if (!is.null(model_nb)) {
   cat("Poisson AIC:", AIC(model_poisson), "\n")
   cat("NB AIC:", AIC(model_nb), "\n")
 }
+```
+
+```{r sum stats}
+# Summary statistics
+summary(fishnet_model$countSanitation)
+
+mean(fishnet_model$countSanitation)
+sd(fishnet_model$countSanitation)
+range(fishnet_model$countSanitation)
+
 ```
 
 #### 5: Spatial Cross-Validation (2017)
