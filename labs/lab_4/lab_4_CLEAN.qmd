@@ -45,7 +45,7 @@ Sanitation 311 violations were selected because they reflect neighborhood-level 
 
 ## Completing the Analysis
 
-```{r}
+```{r- library}
 #| message: false
 #| warning: false
 #| results: 'hide'
@@ -139,7 +139,7 @@ glimpse(sanitation)
 cat("Number of sanitation requests:", nrow(sanitation), "\n")
 ```
 
-```{r}
+```{r-sum stats}
 # Summary statistics
 summary(fishnet_model$countSanitation)
 
@@ -152,7 +152,7 @@ range(fishnet_model$countSanitation)
 
 I created visualizations of the locations of sanitation violations and also created a kernel density estimation surface to visualize clustering/distribution. This step provides an initial understanding of spatial patterns before modeling/experimenting with interactions. These visuals allow us to identify clustering patterns and potential spatial dependence. The violations do not appear to be evenly distributed across Chicago. Instead, they are highly clustered in specific geographic areas. The KDE visual shows where the concentrations of sanitation violations are.
 
-```{r}
+```{r-1 visuals}
 #| message: false
 #| warning: false
 #| results: 'hide'
