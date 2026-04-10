@@ -16,6 +16,8 @@ website:
           text: "Lab 1: Census Data Exploration"
         - href: labs/lab_2/lab_2.qmd
           text: "Lab 2: Spatial Analysis and Visualization"
+        - href: labs/lab_4/lab_4_CLEANINGUP.qmd
+          text: "Lab 4: Spatial Predictive Analysis"
       - text: Midterm Project
         menu:
           - href: labs/lab_3/Lab3-main/Lab3-main/slides.qmd
@@ -23,7 +25,6 @@ website:
           - href: labs/lab_3/Lab3-main/Lab3-main/technical_appendix.qmd
             text: "Technical Appendix"
             
-  #https://github.com/mamole27/Lab3/slides.html
       
 
 format:

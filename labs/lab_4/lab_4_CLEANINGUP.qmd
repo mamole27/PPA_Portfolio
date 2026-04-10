@@ -50,9 +50,9 @@ Selection: **SANITATION VIOLAITONS**
 #| results: 'hide'
 
 #install - comment out later
-install.packages("spatstat.explore")
-install.packages("spatstat.geom")
-install.packages("viridis")
+# install.packages("spatstat.explore")
+# install.packages("spatstat.geom")
+# install.packages("viridis")
 
 # Load required packages
 library(tidyverse)
@@ -148,7 +148,7 @@ cat("Number of sanitation requests:", nrow(sanitation), "\n")
 # Point map
 p1 <- ggplot() +
   geom_sf(data = chicagoBoundary, fill = "gray95", color = "gray60") +
-  geom_sf(data = sanitation, color = "#1b9e77", size = 0.1, alpha = 0.4) +
+  geom_sf(data = sanitation, color = "yellow3", size = 0.1, alpha = 0.4) +
   labs(
     title = "Sanitation 311 Requests",
     subtitle = paste0("Chicago, n = ", nrow(sanitation))
@@ -165,9 +165,9 @@ kde_raster <- rast(kde_sanitation)
 
 # Convert to dataframe for plotting
 kde_df <- as.data.frame(kde_raster, xy = TRUE)
-
+names(kde_df)
 p2 <- ggplot(kde_df) +
-  geom_raster(aes(x = x, y = y, fill = layer)) +
+  geom_raster(aes(x = x, y = y, fill = lyr.1)) +
   scale_fill_viridis_c() +
   labs(title = "KDE Surface of Sanitation Requests")
 
@@ -302,15 +302,9 @@ fishnet <- st_join(fishnet, policeDistricts) %>%
 #| warning: false
 #| results: 'hide'
 
-fishnet_model <- fishnet %>%
-  st_drop_geometry() %>%
-  dplyr::select(
-    uniqueID,
-    District,
-    countSanitation,
-    sanitation.nn,
-    dist_to_hotspot
-  ) %>%  
+fishnet_model <- fishnet %>% 
+  st_drop_geometry() %>% 
+  dplyr::select( uniqueID, District, countSanitation, sanitation.nn, dist_to_hotspot ) %>% 
   na.omit()
 
 # 4.1  Poisson
@@ -423,52 +417,12 @@ mean(abs(fishnet$countSanitation - fishnet$pred_kde))
 
 Do not simply copy text from the example or from your AI friend. Think about the purpose of each technique and articulate it in your own words.
 
-------------------------------------------------------------------------
-
-## Step 4: Format Your Document
-
-### Formatting Requirements
-
-Your rendered HTML document should be **professional and easy to read**:
-
-#### ✓ Clean Code
-
--   Remove unnecessary code, comments, or debugging lines
--   Keep only essential code chunks
--   Use `code-fold: show` in your YAML header
-
-#### ✓ Clear Structure
-
--   Use headers to organize sections
--   Include a table of contents
--   Add your name and date
-
-#### ✓ Readable Text
-
--   Ensure all text renders properly (no broken markdown)
--   Check that headers appear as headers (not plain text)
--   Use proper markdown formatting
-
-#### ✓ Quality Visualizations
-
--   All plots should have titles and labels
--   Maps should be readable
--   Use consistent color schemes
-
-#### ✓ Professional Presentation
-
--   Proofread for typos
--   Remove any "Your answer here" placeholders
--   Make sure all code runs without errors
--   Make IT NEAT. WE GOTTA LOOK GOOD HERE.
 
 ------------------------------------------------------------------------
 
-## Submission Checklist
+## Checklist
 
-Before you submit, verify that your document includes:
-
-### Required Components
+Document includes:
 
 -   [ ] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
 -   [ ] **Data Exploration**: Maps and summary statistics of your violation data
@@ -483,7 +437,7 @@ Before you submit, verify that your document includes:
 -   [ ] **Error Analysis**: Maps and discussion of where model performs well/poorly
 -   [ ] **Written Explanations**: Your own words explaining each step
 
-### Technical Requirements
+And...
 
 -   [ ] Document renders to HTML without errors
 -   [ ] Code is clean and well-organized
