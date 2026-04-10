@@ -16,7 +16,7 @@ website:
           text: "Lab 1: Census Data Exploration"
         - href: labs/lab_2/lab_2.qmd
           text: "Lab 2: Spatial Analysis and Visualization"
-        - href: labs/lab_4/lab_4_CLEANINGUP.qmd
+        - href: labs/lab_4/lab_4_CLEAN.qmd
           text: "Lab 4: Spatial Predictive Analysis"
       - text: Midterm Project
         menu:

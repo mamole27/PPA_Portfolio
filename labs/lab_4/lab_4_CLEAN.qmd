@@ -225,7 +225,7 @@ ggplot() +
 #### 3: Spatial Features
 
 -   3.1: Calculate k-nearest neighbor features - The k-nearest neighbor function calculates the 3 nearest sanitation violations to each cell of the fishnet. A cell with a smaller distance to its nearest violations may be worse affected.
--   3.2: Perform Local Moran's I analysis - The local Moran's I analysis helps to identify clusters in the data, and whether high/low values are spatially clustered. The hotspots are identified as places where high-high values are surrounded by other high-high values, demonstrating clustering and not random distribution. 
+-   3.2: Perform Local Moran's I analysis - The local Moran's I analysis helps to identify clusters in the data, and whether high/low values are spatially clustered. The hotspots are identified as places where high-high values are surrounded by other high-high values, demonstrating clustering and not random distribution.
 -   3.3: Identify hot spots and cold spots - The hot (high-high) and cold (low-low) spots are based on the Moran's I clustering (above).
 -   3.4: Create distance-to-hotspot measures - The distance of cells (centroids) to the hotspots (centroids) is calculated in this step. These distances are important because shorter distances (aka closer proximity to hotspots) are likely to face similar challenges due to the clustering.
 -   3.5: Join any additional contextual data if you are looking for more to do and really get into this (e.g., demographics, land use) - Added police districts
@@ -297,63 +297,72 @@ I built two models to predict sanitation violations, a Poisson Regression and a 
 #| warning: false
 #| results: 'hide'
 
-# fishnet_model <- fishnet %>% 
-#   st_drop_geometry() %>% 
-#   dplyr::select( uniqueID, District, countSanitation, sanitation.nn, dist_to_hotspot ) %>% 
-#   na.omit()
-
-fishnet_model <- fishnet %>% 
-  st_drop_geometry() %>% 
-  dplyr::select(uniqueID, District, countSanitation, sanitation.nn, dist_to_hotspot) %>% 
+fishnet_model <- fishnet %>%
+  st_drop_geometry() %>%
+  dplyr::select(
+    countSanitation,
+    sanitation.nn,
+    dist_to_hotspot
+  ) %>%
   mutate(
     countSanitation = as.numeric(countSanitation),
     sanitation.nn = as.numeric(sanitation.nn),
     dist_to_hotspot = as.numeric(dist_to_hotspot)
-  ) %>% 
+  ) %>%
   filter(
     is.finite(countSanitation),
     is.finite(sanitation.nn),
     is.finite(dist_to_hotspot)
   )
 
-summary(fishnet_model)
-sapply(fishnet_model, class)
-anyNA(fishnet_model)
+# sanity check
+cat("Missing values check:\n")
+print(sapply(fishnet_model, function(x) sum(!is.finite(x))))
 
-# 4.1  Poisson
-# model_poisson <- glm(
-#   countSanitation ~ sanitation.nn + dist_to_hotspot,
-#   data = fishnet_model,
-#   family = "poisson"
-# )
+cat("\nSD check:\n")
+print(sapply(fishnet_model, sd))
+
 model_poisson <- glm(
   countSanitation ~ sanitation.nn + dist_to_hotspot,
   data = fishnet_model,
   family = poisson()
 )
 
-# Overdispersion
-dispersion <- sum(residuals(model_poisson, type = "pearson")^2) / model_poisson$df.residual
+summary(model_poisson)
 
-# Negative Binomial
-# model_nb <- glm.nb(
-#   countSanitation ~ sanitation.nn + dist_to_hotspot,
-#   data = fishnet_model
-# )
-model_nb <- MASS::glm.nb(
-  countSanitation ~ sanitation.nn + dist_to_hotspot,
-  data = fishnet_model
+dispersion <- sum(residuals(model_poisson, type = "pearson")^2) /
+  model_poisson$df.residual
+
+cat("\nDispersion parameter:", dispersion, "\n")
+
+if (dispersion > 1.5) {
+  cat("⚠ Overdispersion detected → trying Negative Binomial\n")
+} else {
+  cat("✓ Poisson is likely sufficient\n")
+}
+
+model_nb <- tryCatch(
+  MASS::glm.nb(
+    countSanitation ~ sanitation.nn + dist_to_hotspot,
+    data = fishnet_model
+  ),
+  error = function(e) {
+    cat("\n❌ Negative Binomial failed:\n")
+    print(e$message)
+    return(NULL)
+  }
 )
 
-# Compare
-AIC(model_poisson, model_nb)
-
+if (!is.null(model_nb)) {
+  cat("\nMODEL COMPARISON\n")
+  cat("Poisson AIC:", AIC(model_poisson), "\n")
+  cat("NB AIC:", AIC(model_nb), "\n")
+}
 ```
 
 #### 5: Spatial Cross-Validation (2017)
 
-I tested the model by leaving out one police district at a time and predicting it. This is important because nearby locations are similar, so random splitting would make the model look better than it really is. This method gives a more realistic test of how well the model works in different areas.
-The results show that some districts are easier to predict than others so it does not perform equally well across Chicago.
+I tested the model by leaving out one police district at a time and predicting it. This is important because nearby locations are similar, so random splitting would make the model look better than it really is. This method gives a more realistic test of how well the model works in different areas. The results show that some districts are easier to predict than others so it does not perform equally well across Chicago.
 
 -   5.1: Implement Leave-One-Group-Out cross-validation on 2017 data
 -   5.2: Calculate and report error metrics (MAE, RMSE)
@@ -403,7 +412,9 @@ I compared my model to a KDE baseline; this assumes future patterns will look li
 
 # Add model predictions
 fishnet <- fishnet %>%
-  mutate(pred_nb = predict(model_nb, fishnet_model, type = "response"))
+  mutate(
+    pred_poisson = predict(model_poisson, newdata = fishnet_model, type = "response")
+  )
 
 # Normalize KDE
 kde_vals <- terra::extract(kde_raster, vect(fishnet), fun = mean)[,2]
@@ -415,7 +426,7 @@ fishnet <- fishnet %>%
 
 # Compare maps
 p1 <- ggplot() + geom_sf(aes(fill = countSanitation), data = fishnet)
-p2 <- ggplot() + geom_sf(aes(fill = pred_nb), data = fishnet)
+p2 <- ggplot() + geom_sf(aes(fill = pred_poisson), data = fishnet)
 p3 <- ggplot() + geom_sf(aes(fill = pred_kde), data = fishnet)
 
 p1 + p2 + p3
@@ -426,19 +437,8 @@ mean(abs(fishnet$countSanitation - fishnet$pred_kde))
 
 ```
 
-------------------------------------------------------------------------
+#### 7: Error Analysis
 
-## Step 3: Write Your Analysis
-
-### Critical Requirement: Explain Each Step
-
-**For each major section, you must explain in your own words:**
-
--   **What** you are doing in that step
--   **Why** this step is important for the analysis
--   **What** you found or learned from the results
-
-Do not simply copy text from the example or from your AI friend. Think about the purpose of each technique and articulate it in your own words.
 
 ------------------------------------------------------------------------
 
@@ -448,23 +448,23 @@ Document includes:
 
 -   [ ] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
 -   [ ] **Data Exploration**: Maps and summary statistics of your violation data
--   [ ] **Fishnet Grid**: Successfully created and visualized grid with aggregated counts
--   [ ] **Spatial Features**: At least 2-3 spatial features calculated (k-NN, distance measures, etc.)
--   [ ] **Local Moran's I**: Spatial autocorrelation analysis with interpretation
--   [ ] **Count Regression**: Both Poisson and Negative Binomial models with comparison
+-   [x] **Fishnet Grid**: Successfully created and visualized grid with aggregated counts
+-   [x] **Spatial Features**: At least 2-3 spatial features calculated (k-NN, distance measures, etc.)
+-   [x] **Local Moran's I**: Spatial autocorrelation analysis with interpretation
+-   [x] **Count Regression**: Both Poisson and Negative Binomial models with comparison
 -   [ ] **Spatial Cross-Validation**: LOGO CV implemented on 2017 data with reported metrics
 -   [ ] **Temporal Validation**: 2018 data aggregated and tested with 2017 model(OPTIONAL.)
 -   [ ] **Validation Comparison**: Comparison of spatial vs. temporal validation performance
--   [ ] **Model Comparison**: Your model vs. KDE baseline for 2018 predictions
+-   [x] **Model Comparison**: Your model vs. KDE baseline for 2018 predictions
 -   [ ] **Error Analysis**: Maps and discussion of where model performs well/poorly
 -   [ ] **Written Explanations**: Your own words explaining each step
 
 And...
 
--   [ ] Document renders to HTML without errors
--   [ ] Code is clean and well-organized
--   [ ] All visualizations display properly
--   [ ] Headers and formatting render correctly
--   [ ] File is named successfully posted to your website
+-   [x] Document renders to HTML without errors
+-   [x] Code is clean and well-organized
+-   [x] All visualizations display properly
+-   [x] Headers and formatting render correctly
+-   [x] File is named successfully posted to your website
 
 ------------------------------------------------------------------------
