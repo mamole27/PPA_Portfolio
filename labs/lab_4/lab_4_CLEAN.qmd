@@ -45,7 +45,7 @@ Sanitation 311 violations were selected because they reflect neighborhood-level 
 
 ## Completing the Analysis
 
-```{r- library}
+```{r library}
 #| message: false
 #| warning: false
 #| results: 'hide'
@@ -108,10 +108,7 @@ I loaded Chicago’s 311 Sanitation Violations dataset and the spatial boundary 
 #| message: false
 
 # Load police districts (used for spatial cross-validation)
-policeDistricts <- 
-  st_read("https://data.cityofchicago.org/api/geospatial/24zt-jpfn?method=export&format=GeoJSON") %>%
-  st_transform('ESRI:102271') %>%
-  dplyr::select(District = dist_num)
+policeDistricts <- st_read("https://data.cityofchicago.org/api/geospatial/24zt-jpfn?method=export&format=GeoJSON") %>% st_transform('ESRI:102271') %>% dplyr::select(District = dist_num)
 
 # Load police beats (smaller administrative units)
 policeBeats <- 
@@ -139,7 +136,7 @@ glimpse(sanitation)
 cat("Number of sanitation requests:", nrow(sanitation), "\n")
 ```
 
-```{r-sum stats}
+```{r sum stats}
 # Summary statistics
 summary(fishnet_model$countSanitation)
 
@@ -152,7 +149,7 @@ range(fishnet_model$countSanitation)
 
 I created visualizations of the locations of sanitation violations and also created a kernel density estimation surface to visualize clustering/distribution. This step provides an initial understanding of spatial patterns before modeling/experimenting with interactions. These visuals allow us to identify clustering patterns and potential spatial dependence. The violations do not appear to be evenly distributed across Chicago. Instead, they are highly clustered in specific geographic areas. The KDE visual shows where the concentrations of sanitation violations are.
 
-```{r-1 visuals}
+```{r 1 visuals}
 #| message: false
 #| warning: false
 #| results: 'hide'
@@ -476,17 +473,17 @@ The model performs better in areas with moderate levels of sanitation violations
 Document includes:
 
 -   [x] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
--   [ ] **Data Exploration**: Maps and summary statistics of your violation data
+-   [x] **Data Exploration**: Maps and summary statistics of your violation data
 -   [x] **Fishnet Grid**: Successfully created and visualized grid with aggregated counts
 -   [x] **Spatial Features**: At least 2-3 spatial features calculated (k-NN, distance measures, etc.)
 -   [x] **Local Moran's I**: Spatial autocorrelation analysis with interpretation
 -   [x] **Count Regression**: Both Poisson and Negative Binomial models with comparison
--   [ ] **Spatial Cross-Validation**: LOGO CV implemented on 2017 data with reported metrics
--   [ ] **Temporal Validation**: 2018 data aggregated and tested with 2017 model(OPTIONAL.)
--   [ ] **Validation Comparison**: Comparison of spatial vs. temporal validation performance
+-   [x] **Spatial Cross-Validation**: LOGO CV implemented on 2017 data with reported metrics
+-   [x] **Temporal Validation**: 2018 data aggregated and tested with 2017 model(OPTIONAL.)
+-   [x] **Validation Comparison**: Comparison of spatial vs. temporal validation performance
 -   [x] **Model Comparison**: Your model vs. KDE baseline for 2018 predictions
--   [ ] **Error Analysis**: Maps and discussion of where model performs well/poorly
--   [ ] **Written Explanations**: Your own words explaining each step
+-   [x] **Error Analysis**: Maps and discussion of where model performs well/poorly
+-   [x] **Written Explanations**: Your own words explaining each step
 
 And...
 
