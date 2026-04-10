@@ -51,9 +51,9 @@ Sanitation 311 violations were selected because they reflect neighborhood-level 
 #| results: 'hide'
 
 #install - comment out later
-# install.packages("spatstat.explore")
-# install.packages("spatstat.geom")
-# install.packages("viridis")
+install.packages("spatstat.explore")
+install.packages("spatstat.geom")
+install.packages("viridis")
 
 # Load required packages
 library(tidyverse)
