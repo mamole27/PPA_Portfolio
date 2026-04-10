@@ -39,6 +39,7 @@ Visit the Chicago 311 Service Requests dataset:
 <https://data.cityofchicago.org/stories/s/311-Dataset-Changes-12-11-2018/d7nq-5g7t>
 
 Selection: **SANITATION VIOLAITONS**
+Sanitation 311 violations were selected because they reflect neighborhood-level environmental quality issues that are likely to exhibit spatial clustering. These violations are not randomly distributed and may be influenced by built environment conditions, reporting behavior, and population density. The goal of this analysis is to model spatial variation in sanitation complaints using spatial features and count regression models. The results are evaluated using spatial validation techniques to assess predictive performance across Chicago.
 
 ------------------------------------------------------------------------
 
@@ -138,6 +139,15 @@ glimpse(sanitation)
 cat("Number of sanitation requests:", nrow(sanitation), "\n")
 ```
 
+```{r}
+# Summary statistics
+summary(fishnet_model$countSanitation)
+
+mean(fishnet_model$countSanitation)
+sd(fishnet_model$countSanitation)
+range(fishnet_model$countSanitation)
+
+```
 -   1.2: Create visualizations showing the spatial distribution of violation type
 
 I created visualizations of the locations of sanitation violations and also created a kernel density estimation surface to visualize clustering/distribution. This step provides an initial understanding of spatial patterns before modeling/experimenting with interactions. These visuals allow us to identify clustering patterns and potential spatial dependence. The violations do not appear to be evenly distributed across Chicago. Instead, they are highly clustered in specific geographic areas. The KDE visual shows where the concentrations of sanitation violations are.
@@ -439,6 +449,25 @@ mean(abs(fishnet$countSanitation - fishnet$pred_kde))
 
 #### 7: Error Analysis
 
+```{r}
+# # residual map
+# ggplot(fishnet) +
+#   geom_sf(aes(fill = residual_poisson)) +
+#   scale_fill_gradient2() +
+#   labs(
+#     title = "Model Error (Poisson): Negative Binomial",
+#     fill = "Residual"
+#   )
+# 
+# # predicted / actual
+# ggplot(fishnet) +
+#   geom_sf(aes(fill = pred_nb)) +
+#   scale_fill_viridis_c() +
+#   labs(title = "Predicted Sanitation Violations")
+# 
+```
+
+The model performs better in areas with moderate levels of sanitation violations, while it struggles in extreme hotspot areas where violations are highly clustered. Errors are higher in central high-density neighborhoods, suggesting that additional social or land-use variables may improve model accuracy. Overall, the model captures broad spatial trends but underestimates peak intensity in hotspot zones.
 
 ------------------------------------------------------------------------
 
@@ -446,7 +475,7 @@ mean(abs(fishnet$countSanitation - fishnet$pred_kde))
 
 Document includes:
 
--   [ ] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
+-   [x] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
 -   [ ] **Data Exploration**: Maps and summary statistics of your violation data
 -   [x] **Fishnet Grid**: Successfully created and visualized grid with aggregated counts
 -   [x] **Spatial Features**: At least 2-3 spatial features calculated (k-NN, distance measures, etc.)
