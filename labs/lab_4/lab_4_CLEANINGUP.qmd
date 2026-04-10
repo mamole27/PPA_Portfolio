@@ -1,0 +1,494 @@
+---
+title: "Lab 4: Spatial Predictive Analysis"
+subtitle: "Analyzing 311 Violations"
+author: "Mackenna Amole"
+date: 9 April 2026
+format: 
+  html:
+    code-fold: show
+    toc: true
+    toc-location: left
+    theme: cosmo
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+## Assignment Overview
+
+In this lab, I applied spatial predictive modeling techniques demonstrated in an in-class exercise using 311 Sanitation Violations as the predictor variable. I built a complete spatial predictive model, documented my process, and interpreted my results.
+
+### Learning Objectives
+
+-   Adapt example code to analyze a new dataset
+-   Build spatial features for predictive modeling
+-   Apply count regression techniques to spatial data
+-   Implement spatial cross-validation
+-   Interpret and communicate model results
+-   Critically evaluate model performance
+
+------------------------------------------------------------------------
+
+## Choosing My 311 Violation Type
+
+### Getting the Data
+
+Visit the Chicago 311 Service Requests dataset:
+
+<https://data.cityofchicago.org/stories/s/311-Dataset-Changes-12-11-2018/d7nq-5g7t>
+
+Selection: **SANITATION VIOLAITONS**
+
+------------------------------------------------------------------------
+
+## Completing the Analysis
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+#install - comment out later
+install.packages("spatstat.explore")
+install.packages("spatstat.geom")
+install.packages("viridis")
+
+# Load required packages
+library(tidyverse)
+library(sf)
+library(here)
+library(viridis)
+library(terra)
+library(spdep)
+library(FNN)
+library(MASS)
+library(patchwork)
+library(knitr)
+library(kableExtra)
+library(classInt)
+# Spatstat for analyzing point patterns - split into sub-packages
+library(spatstat.geom)
+library(spatstat.explore)
+
+
+# Set options
+options(scipen = 999)  # No scientific notation
+set.seed(5080)         # Reproducibility, could be any number
+
+# Create consistent theme for visualizations
+theme_crime <- function(base_size = 11) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      plot.title = element_text(face = "bold", size = base_size + 1),
+      plot.subtitle = element_text(color = "gray30", size = base_size - 1),
+      legend.position = "right",
+      panel.grid.minor = element_blank(),
+      axis.text = element_blank(),
+      axis.title = element_blank()
+    )
+}
+
+# Set as default
+theme_set(theme_crime())
+
+cat("✓ All packages loaded successfully!\n")
+cat("✓ Working directory:", getwd(), "\n")
+
+```
+
+#### 1: Data Loading & Exploration
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   1.1: Load 311 data and Chicago spatial boundaries
+
+```{r load-boundaries}
+#| message: false
+
+# Load police districts (used for spatial cross-validation)
+policeDistricts <- 
+  st_read("https://data.cityofchicago.org/api/geospatial/24zt-jpfn?method=export&format=GeoJSON") %>%
+  st_transform('ESRI:102271') %>%
+  dplyr::select(District = dist_num)
+
+# Load police beats (smaller administrative units)
+policeBeats <- 
+  st_read("https://data.cityofchicago.org/api/geospatial/n9it-hstw?method=export&format=GeoJSON") %>%
+  st_transform('ESRI:102271') %>%
+  dplyr::select(Beat = beat_num)
+
+# Load Chicago boundary
+chicagoBoundary <- 
+  st_read("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/DATA/Chapter5/chicagoBoundary.geojson") %>%
+  st_transform('ESRI:102271')
+
+cat("✓ Loaded spatial boundaries\n")
+cat("  - Police districts:", nrow(policeDistricts), "\n")
+cat("  - Police beats:", nrow(policeBeats), "\n")
+```
+
+```{r load-sanitation}
+sanitation <- read_csv(here("labs/lab_4//311_Sanitation.csv")) %>%
+  filter(!is.na(Longitude), !is.na(Latitude)) %>%
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  st_transform('ESRI:102271')
+
+glimpse(sanitation)
+cat("Number of sanitation requests:", nrow(sanitation), "\n")
+```
+
+-   1.2: Create visualizations showing the spatial distribution of violation type
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+# Point map
+p1 <- ggplot() +
+  geom_sf(data = chicagoBoundary, fill = "gray95", color = "gray60") +
+  geom_sf(data = sanitation, color = "#1b9e77", size = 0.1, alpha = 0.4) +
+  labs(
+    title = "Sanitation 311 Requests",
+    subtitle = paste0("Chicago, n = ", nrow(sanitation))
+  )
+
+# KDE surface
+sanitation_ppp <- as.ppp(
+  st_coordinates(sanitation),
+  W = as.owin(st_bbox(chicagoBoundary))
+)
+
+kde_sanitation <- density.ppp(sanitation_ppp, sigma = 1000, edge = TRUE)
+kde_raster <- rast(kde_sanitation)
+
+# Convert to dataframe for plotting
+kde_df <- as.data.frame(kde_raster, xy = TRUE)
+
+p2 <- ggplot(kde_df) +
+  geom_raster(aes(x = x, y = y, fill = layer)) +
+  scale_fill_viridis_c() +
+  labs(title = "KDE Surface of Sanitation Requests")
+
+p1 + p2
+
+```
+
+-   1.3: Describe patterns observed
+
+Then write something like:
+
+Sanitation requests are clustered, not evenly distributed
+Higher concentrations appear in denser urban areas
+KDE shows smooth hot spots that suggest spatial clustering
+
+
+#### 2: Fishnet Grid Creation
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   2.1: Create a 500m x 500m fishnet grid
+-   2.2: Aggregate your violations to grid cells
+-   2.3: Visualize the count distribution
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+# 2.1 Create fishnet
+fishnet <- st_make_grid(chicagoBoundary, cellsize = 500, square = TRUE) %>%
+  st_sf() %>%
+  mutate(uniqueID = row_number()) %>%
+  st_transform('ESRI:102271')
+
+fishnet <- fishnet[chicagoBoundary, ]
+
+# 2.2 Aggregate sanitation
+sanitation_fishnet <- st_join(sanitation, fishnet, join = st_within) %>%
+  st_drop_geometry() %>%
+  group_by(uniqueID) %>%
+  summarize(countSanitation = n())
+
+# Join back
+fishnet <- fishnet %>%
+  left_join(sanitation_fishnet, by = "uniqueID") %>%
+  mutate(countSanitation = replace_na(countSanitation, 0))
+
+# 2.3 Map
+ggplot() +
+  geom_sf(data = fishnet, aes(fill = countSanitation), color = NA) +
+  geom_sf(data = chicagoBoundary, fill = NA, color = "white") +
+  scale_fill_viridis_c(trans = "sqrt") +
+  labs(title = "Sanitation Requests by Grid Cell")
+
+```
+
+#### 3: Spatial Features
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   3.1: Calculate k-nearest neighbor features
+-   3.2: Perform Local Moran's I analysis
+-   3.3: Identify hot spots and cold spots
+-   3.4: Create distance-to-hotspot measures
+-   3.5: Join any additional contextual data if you are looking for more to do and really get into this (e.g., demographics, land use)
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+# 3.1 KNN
+fishnet_coords <- st_coordinates(st_centroid(fishnet))
+sanitation_coords <- st_coordinates(sanitation)
+
+nn <- get.knnx(sanitation_coords, fishnet_coords, k = 3)
+
+fishnet <- fishnet %>%
+  mutate(sanitation.nn = rowMeans(nn$nn.dist))
+
+# 3.2 Moran's I
+coords <- st_coordinates(st_centroid(fishnet))
+neighbors <- spdep::knn2nb(spdep::knearneigh(coords, k = 5))
+weights <- spdep::nb2listw(neighbors, style = "W")
+
+local_moran <- spdep::localmoran(fishnet$countSanitation, weights)
+
+fishnet <- fishnet %>%
+  mutate(
+    local_i = local_moran[,1],
+    p_value = local_moran[,5],
+    moran_class = case_when(
+      p_value > 0.05 ~ "Not Significant",
+      local_i > 0 & countSanitation > mean(countSanitation) ~ "High-High",
+      local_i > 0 ~ "Low-Low",
+      local_i < 0 & countSanitation > mean(countSanitation) ~ "High-Low",
+      TRUE ~ "Low-High"
+    )
+  )
+
+# 3.3 Map clusters
+ggplot() +
+  geom_sf(aes(fill = moran_class), data = fishnet, color = NA)
+
+# 3.4 Distance to hotspots
+hotspots <- fishnet %>% filter(moran_class == "High-High")
+
+fishnet <- fishnet %>%
+  mutate(
+    dist_to_hotspot = as.numeric(
+      st_distance(st_centroid(fishnet), st_union(st_centroid(hotspots)))
+    )
+  )
+
+# 3.5 Join districts
+fishnet <- st_join(fishnet, policeDistricts) %>%
+  filter(!is.na(District))
+
+```
+
+#### 4: Count Regression Models
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   4.1: Fit Poisson regression
+-   4.2: Fit Negative Binomial regression
+-   4.3: Compare model fit (AIC)
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+fishnet_model <- fishnet %>%
+  st_drop_geometry() %>%
+  dplyr::select(
+    uniqueID,
+    District,
+    countSanitation,
+    sanitation.nn,
+    dist_to_hotspot
+  ) %>%  
+  na.omit()
+
+# 4.1  Poisson
+model_poisson <- glm(
+  countSanitation ~ sanitation.nn + dist_to_hotspot,
+  data = fishnet_model,
+  family = "poisson"
+)
+
+# Overdispersion
+dispersion <- sum(residuals(model_poisson, type = "pearson")^2) / model_poisson$df.residual
+
+# Negative Binomial
+model_nb <- glm.nb(
+  countSanitation ~ sanitation.nn + dist_to_hotspot,
+  data = fishnet_model
+)
+
+# Compare
+AIC(model_poisson, model_nb)
+
+```
+
+#### 5: Spatial Cross-Validation (2017)
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   5.1: Implement Leave-One-Group-Out cross-validation on 2017 data
+-   5.2: Calculate and report error metrics (MAE, RMSE)
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+districts <- unique(fishnet_model$District)
+cv_results <- data.frame()
+
+for (d in districts) {
+
+  train <- fishnet_model %>% filter(District != d)
+  test <- fishnet_model %>% filter(District == d)
+
+  model <- glm.nb(
+    countSanitation ~ sanitation.nn + dist_to_hotspot,
+    data = train
+  )
+
+  preds <- predict(model, test, type = "response")
+
+  mae <- mean(abs(test$countSanitation - preds))
+  rmse <- sqrt(mean((test$countSanitation - preds)^2))
+
+  cv_results <- rbind(cv_results,
+    data.frame(District = d, MAE = mae, RMSE = rmse))
+}
+
+mean(cv_results$MAE)
+mean(cv_results$RMSE)
+
+```
+
+#### 6: Model Evaluation
+
+**Analysis** - What you are doing in that step / **Why** this step is important for the analysis / **What** you found or learned from the results
+
+-   6.1: Compare to KDE baseline
+
+```{r}
+#| message: false
+#| warning: false
+#| results: 'hide'
+
+# Add model predictions
+fishnet <- fishnet %>%
+  mutate(pred_nb = predict(model_nb, fishnet_model, type = "response"))
+
+# Normalize KDE
+kde_vals <- terra::extract(kde_raster, vect(fishnet), fun = mean)[,2]
+
+fishnet$kde <- kde_vals
+
+fishnet <- fishnet %>%
+  mutate(pred_kde = kde / sum(kde) * sum(countSanitation))
+
+# Compare maps
+p1 <- ggplot() + geom_sf(aes(fill = countSanitation), data = fishnet)
+p2 <- ggplot() + geom_sf(aes(fill = pred_nb), data = fishnet)
+p3 <- ggplot() + geom_sf(aes(fill = pred_kde), data = fishnet)
+
+p1 + p2 + p3
+
+# Metrics
+mean(abs(fishnet$countSanitation - fishnet$pred_nb))
+mean(abs(fishnet$countSanitation - fishnet$pred_kde))
+
+```
+
+------------------------------------------------------------------------
+
+## Step 3: Write Your Analysis
+
+### Critical Requirement: Explain Each Step
+
+**For each major section, you must explain in your own words:**
+
+-   **What** you are doing in that step
+-   **Why** this step is important for the analysis
+-   **What** you found or learned from the results
+
+Do not simply copy text from the example or from your AI friend. Think about the purpose of each technique and articulate it in your own words.
+
+------------------------------------------------------------------------
+
+## Step 4: Format Your Document
+
+### Formatting Requirements
+
+Your rendered HTML document should be **professional and easy to read**:
+
+#### ✓ Clean Code
+
+-   Remove unnecessary code, comments, or debugging lines
+-   Keep only essential code chunks
+-   Use `code-fold: show` in your YAML header
+
+#### ✓ Clear Structure
+
+-   Use headers to organize sections
+-   Include a table of contents
+-   Add your name and date
+
+#### ✓ Readable Text
+
+-   Ensure all text renders properly (no broken markdown)
+-   Check that headers appear as headers (not plain text)
+-   Use proper markdown formatting
+
+#### ✓ Quality Visualizations
+
+-   All plots should have titles and labels
+-   Maps should be readable
+-   Use consistent color schemes
+
+#### ✓ Professional Presentation
+
+-   Proofread for typos
+-   Remove any "Your answer here" placeholders
+-   Make sure all code runs without errors
+-   Make IT NEAT. WE GOTTA LOOK GOOD HERE.
+
+------------------------------------------------------------------------
+
+## Submission Checklist
+
+Before you submit, verify that your document includes:
+
+### Required Components
+
+-   [ ] **Introduction**: Brief description of your chosen 311 violation type and why you selected it
+-   [ ] **Data Exploration**: Maps and summary statistics of your violation data
+-   [ ] **Fishnet Grid**: Successfully created and visualized grid with aggregated counts
+-   [ ] **Spatial Features**: At least 2-3 spatial features calculated (k-NN, distance measures, etc.)
+-   [ ] **Local Moran's I**: Spatial autocorrelation analysis with interpretation
+-   [ ] **Count Regression**: Both Poisson and Negative Binomial models with comparison
+-   [ ] **Spatial Cross-Validation**: LOGO CV implemented on 2017 data with reported metrics
+-   [ ] **Temporal Validation**: 2018 data aggregated and tested with 2017 model(OPTIONAL.)
+-   [ ] **Validation Comparison**: Comparison of spatial vs. temporal validation performance
+-   [ ] **Model Comparison**: Your model vs. KDE baseline for 2018 predictions
+-   [ ] **Error Analysis**: Maps and discussion of where model performs well/poorly
+-   [ ] **Written Explanations**: Your own words explaining each step
+
+### Technical Requirements
+
+-   [ ] Document renders to HTML without errors
+-   [ ] Code is clean and well-organized
+-   [ ] All visualizations display properly
+-   [ ] Headers and formatting render correctly
+-   [ ] File is named successfully posted to your website
+
+------------------------------------------------------------------------
