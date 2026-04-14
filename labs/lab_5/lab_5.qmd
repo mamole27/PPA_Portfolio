@@ -115,8 +115,15 @@ census_api_key(Sys.getenv("CENSUS_API_KEY"))
 **Note for HW5:** You'll download a different quarter from: https://www.rideindego.com/about/data/
 
 ```{r load_indego}
+# Check current working directory
+getwd()
+# Set a new working directory
+setwd("C:/Users/macke/OneDrive/Documents/GitHub/PPA_Portfolio/labs/lab_5")
+# Verify the change
+getwd()
+
 # Read Q1 2025 data
-indego <- read_csv(here("data/indego-trips-2025-q1.csv"))
+indego <- read_csv(here("labs/lab_5/data/indego-trips-2025-q1.csv"))
 
 # Quick look at the data
 glimpse(indego)
@@ -249,6 +256,8 @@ ggplot(hourly_patterns, aes(x = hour, y = avg_trips, color = day_type)) +
 ```
 
 **Question:** When are the peak hours? How do weekends differ from weekdays?
+
+Weekend ridership begins later in the day, doesn't peak as high, but is more constant. Weekday ridership spikes significantly during "rush hours" when people are commuting to work (8/9 AM and 4/5PM).
 
 ## Top Stations
 
