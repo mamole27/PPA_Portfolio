@@ -1172,7 +1172,7 @@ p3 <- ggplot(station_errors_demo, aes(x = Percent_White, y = MAE)) +
 
 # HW5: YOUR TURN!
 
-For Homework 5, you'll work either all byyyy yourself or in teams of 2 to:
+For Homework 5, you'll work either all by yourself or in teams of 2 to:
 
 ## Part 1: Replicate with Different Quarter (alternately, you could do a longer time-span by merging multiple quarters together. I'm not picky about that)
 
