@@ -1,8 +1,8 @@
 ---
-title: "Bikeshare_SpaceTime_Prediction"
+title: "Bikeshare Space-Time Prediction"
 subtitle: "CPLN 5080 - Spring 2026"
-author: "Your Name"
-date: today
+author: "Mackenna Amole"
+date: 20 April 2026
 format:
   html:
     code-fold: show
