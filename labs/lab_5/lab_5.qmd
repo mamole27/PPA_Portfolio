@@ -1157,7 +1157,7 @@ For Homework 5, you'll work either all by yourself or in teams of 2 to:
 
 1.  **Download data** for Q2, Q3, or Q4 2024 from: https://www.rideindego.com/about/data/
 
-```{r load_indego}
+```{r load_indego 5}
 # Check current working directory
 getwd()
 # Set a new working directory
@@ -1175,7 +1175,7 @@ indegoQ3 <- read_csv(here("labs/lab_5/data/indego-trips-2025-q3.csv"))
 glimpse(indegoQ3)
 ```
 
-```{r explore_data}
+```{r explore_data 5}
 # How many trips?
 cat("Total trips in Q3 2025:", nrow(indegoQ3), "\n")
 
@@ -1197,7 +1197,7 @@ table(indegoQ3$passholder_type)
 table(indegoQ3$bike_type)
 ```
 
-```{r create-time-bins}
+```{r create-time-bins 5}
 indegoQ3 <- indegoQ3 %>%
   mutate(
     # Parse datetime
@@ -1223,7 +1223,7 @@ indegoQ3 <- indegoQ3 %>%
 head(indegoQ3 %>% select(start_datetime, interval60, week, dotw, hour, weekend))
 ```
 
-```{r trips_over_time}
+```{r trips_over_time 5}
 #| message: false
 #| warning: false
 
@@ -1245,7 +1245,7 @@ ggplot(Q3_daily_trips, aes(x = date, y = trips)) +
   plotTheme
 ```
 
-```{r hourly_patterns}
+```{r hourly_patterns 5}
 # Average trips by hour and day type
 Q3_hourly_patterns <- indegoQ3 %>%
   group_by(hour, weekend) %>%
@@ -1265,7 +1265,7 @@ ggplot(Q3_hourly_patterns, aes(x = hour, y = avg_trips, color = day_type)) +
   plotTheme
 ```
 
-```{r top_stations}
+```{r top_stations 5}
 # Most popular origin stations
 Q3_top_stations <- indegoQ3 %>%
   count(start_station, start_lat, start_lon, name = "trips") %>%
@@ -1278,7 +1278,7 @@ kable(Q3_top_stations,
   kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-```{r join_census_to_stations}
+```{r join_census_to_stations 5}
 # Create sf object for stations
 Q3_stations_sf <- indegoQ3 %>%
   distinct(start_station, start_lat, start_lon) %>%
@@ -1350,7 +1350,7 @@ ggplot() +
 
 ```
 
-```{r}
+```{r stations to keep}
 # Identify which stations to keep
 Q3_valid_stations <- Q3_stations_census %>%
   filter(!is.na(Med_Inc)) %>%
@@ -1372,7 +1372,7 @@ Q3_indego_census <- indegoQ3 %>%
 
     -   Update date ranges for weather data
 
-    ```{r get_weather}
+    ```{r get_weather 5}
     # Get weather from Philadelphia International Airport (KPHL)
     # This covers Q1 2025: January 1 - March 31
     Q3_weather_data <- riem_measures(
@@ -1401,7 +1401,7 @@ Q3_indego_census <- indegoQ3 %>%
     summary(Q3_weather_complete %>% select(Temperature, Precipitation, Wind_Speed))
     ```
 
-    ```{r visualize-weather}
+    ```{r visualize-weather 5}
     #| message: false
     #| warning: false
     #| 
@@ -1419,7 +1419,7 @@ Q3_indego_census <- indegoQ3 %>%
 
     -   Check for any data structure changes
 
-    ```{r aggregate-trips}
+    ```{r aggregate-trips 5}
     #| message: false
     #| warning: false
 
@@ -1442,7 +1442,7 @@ Q3_indego_census <- indegoQ3 %>%
     hist(Q3_trips_panel$Trip_Count)
     ```
 
-    ```{r complete-panel}
+    ```{r complete-panel 5}
     # Calculate expected panel size
     Q3_n_stations <- length(unique(Q3_trips_panel$start_station))
     Q3_n_hours <- length(unique(trips_panel$interval60))
@@ -1490,7 +1490,7 @@ Q3_indego_census <- indegoQ3 %>%
     cat("Complete panel rows:", format(nrow(Q3_study_panel), big.mark = ","), "\n")
     ```
 
-    ```{r add_time_features}
+    ```{r add_time_features 5}
     Q3_study_panel <- Q3_study_panel %>%
       mutate(
         week = week(interval60),
@@ -1505,7 +1505,7 @@ Q3_indego_census <- indegoQ3 %>%
     glimpse(Q3_study_panel)
     ```
 
-```{r join_weather}
+```{r join_weather 5}
 Q3_study_panel <- Q3_study_panel %>%
   left_join(Q3_weather_complete, by = "interval60")
 
@@ -1515,7 +1515,7 @@ glimpse(Q3_study_panel)
 summary(Q3_study_panel %>% select(Trip_Count, Temperature, Precipitation))
 ```
 
-```{r create_lags}
+```{r create_lags 5}
 # Sort by station and time
 Q3_study_panel <- Q3_study_panel %>%
   arrange(start_station, interval60)
@@ -1539,7 +1539,7 @@ Q3_study_panel_complete <- Q3_study_panel %>%
 cat("Rows after removing NA lags:", format(nrow(Q3_study_panel_complete), big.mark = ","), "\n")
 ```
 
-```{r lag_correlations}
+```{r lag_correlations 5}
 # Sample one station to visualize
 Q3_example_station <- Q3_study_panel_complete %>%
   filter(start_station == first(start_station)) %>%
@@ -1565,7 +1565,7 @@ ggplot(Q3_example_station, aes(x = interval60)) +
   plotTheme
 ```
 
-```{r temporal-split}
+```{r temporal-split 5}
 # Split by week
 # Q3 has weeks 27-39 (JUL-SEP)
 # Train on weeks 27-35 (JUL 1 - early SEP)
@@ -1608,7 +1608,7 @@ cat("Testing date range:", min(Q3_test$date), "to", max(Q3_test$date), "\n")
 
 -   Create the same 5 models
 
-```{r model1}
+```{r model1 5}
 
 # Create day of week factor with treatment (dummy) coding
 Q3_train <- Q3_train %>%
@@ -1626,7 +1626,7 @@ Q3_model1 <- lm(
 summary(Q3_model1)
 ```
 
-```{r model2}
+```{r model2 5}
 Q3_model2 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day,
@@ -1636,7 +1636,7 @@ Q3_model2 <- lm(
 summary(Q3_model2)
 ```
 
-```{r model3}
+```{r model3 5}
 Q3_model3 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day +
@@ -1647,7 +1647,7 @@ Q3_model3 <- lm(
 summary(Q3_model3)
 ```
 
-```{r model4}
+```{r model4 5}
 Q3_model4 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day +
@@ -1661,7 +1661,7 @@ cat("Q3 Model 4 R-squared:", summary(Q3_model4)$r.squared, "\n")
 cat("Q3 Model 4 Adj R-squared:", summary(Q3_model4)$adj.r.squared, "\n")
 ```
 
-```{r model5}
+```{r model5 5}
 Q3_model5 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day + rush_hour + as.factor(month) +
@@ -1679,7 +1679,7 @@ cat("Q3 Model 5 Adj R-squared:", summary(Q3_model5)$adj.r.squared, "\n")
 -   Calculate MAE for each model 
 ```
 
-```{r calculate_mae}
+```{r calculate_mae 5}
 # Get predictions on test set
 
 # Create day of week factor with treatment (dummy) coding
@@ -1736,7 +1736,7 @@ Analyze your model's errors in detail:
 
 1.  **Spatial patterns:**
 
-```{r obs_vs_pred}
+```{r obs_vs_pred 5}
 #| message: false
 #| warning: false
 
@@ -1769,7 +1769,7 @@ ggplot(Q3_test, aes(x = Trip_Count, y = pred2)) +
   plotTheme
 ```
 
-```{r spatial_errors}
+```{r spatial_errors 5}
 # Calculate MAE by station
 Q3_station_errors <- Q3_test %>%
   group_by(start_station, start_lat, start_lon) %>%
@@ -1931,7 +1931,7 @@ Q3_p2 <- ggplot() +
 
 2.  **Temporal patterns:**
 
-```{r temporal_errors}
+```{r temporal_errors 5}
 # MAE by time of day and day type
 Q3_temporal_errors <- Q3_test %>%
   group_by(time_of_day, weekend) %>%
@@ -1963,7 +1963,7 @@ ggplot(Q3_temporal_errors, aes(x = time_of_day, y = MAE, fill = day_type)) +
 
 3.  **Demographic patterns:**
 
-```{r errors_demographics}
+```{r errors_demographics 5}
 #| message: false
 #| warning: false
 
@@ -2014,7 +2014,7 @@ Based on your error analysis, add 2-3 NEW features to improve the model:
 
 -   Holiday indicators (July 4th, Labor Day)
 
-```{R}
+```{R spc1}
 Q3_spc_update <- Q3_study_panel_complete %>%
   mutate(
     holiday = ifelse(
@@ -2027,7 +2027,7 @@ Q3_spc_update <- Q3_study_panel_complete %>%
 
 -   "Perfect biking weather" indicator (60-75°F, no rain)
 
-```{R}
+```{R spc2}
 Q3_spc_update <- Q3_study_panel_complete %>%
   mutate(
     perfect_weather = ifelse(
@@ -2039,7 +2039,7 @@ Q3_spc_update <- Q3_study_panel_complete %>%
 
 -   Extreme heat
 
-```{R}
+```{R spc3}
 Q3_spc_update <- Q3_study_panel_complete %>%
   mutate(
     extreme_heat = ifelse(Temperature >= 90, 1, 0)
@@ -2049,7 +2049,7 @@ Q3_spc_update <- Q3_study_panel_complete %>%
 **Implementation:**
 
 -   Add your features to the best model
-```{r}
+```{r mae5}
 Q3_mae_results
 
 Q3_best_model <- Q3_mae_results[which.min(Q3_mae_results$MAE), ]
@@ -2077,7 +2077,7 @@ Q3_bestmodel_improved <- lm(
 ```
 
 -   Compare MAE before and after
-```{r}
+```{r mae BA}
 Q3_test <- Q3_test %>%
   mutate(
     holiday = ifelse(date %in% as.Date(c("2025-07-04", "2025-09-01")), 1, 0),
@@ -2111,7 +2111,7 @@ cat("Improved Model MAE:", mae_improved, "\n")
 
 **Try a poisson model for count data**
 
-```{r}
+```{r poisson 5}
 Q3_poisson_improved <- glm(
   Trip_Count ~ as.factor(hour) + dotw_simple +
     Temperature + Precipitation +
