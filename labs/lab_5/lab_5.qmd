@@ -1375,7 +1375,7 @@ Q3_valid_stations <- Q3_stations_census %>%
 
 # Filter trip data to valid stations only
 Q3_indego_census <- indegoQ3 %>%
-  filter(start_station %in% valid_stations) %>%
+  filter(start_station %in% Q3_valid_stations) %>%
   left_join(
     Q3_stations_census %>% 
       select(start_station, Med_Inc, Percent_Taking_Transit, 
@@ -1456,31 +1456,31 @@ hist(Q3_trips_panel$Trip_Count)
 ```
 ```{r complete-panel}
 # Calculate expected panel size
-n_stations <- length(unique(trips_panel$start_station))
-n_hours <- length(unique(trips_panel$interval60))
-expected_rows <- n_stations * n_hours
+Q3_n_stations <- length(unique(Q3_trips_panel$start_station))
+Q3_n_hours <- length(unique(trips_panel$interval60))
+Q3_expected_rows <- Q3_n_stations * Q3_n_hours
 
-cat("Expected panel rows:", format(expected_rows, big.mark = ","), "\n")
-cat("Current rows:", format(nrow(trips_panel), big.mark = ","), "\n")
-cat("Missing rows:", format(expected_rows - nrow(trips_panel), big.mark = ","), "\n")
+cat("Expected panel rows:", format(Q3_expected_rows, big.mark = ","), "\n")
+cat("Current rows:", format(nrow(Q3_trips_panel), big.mark = ","), "\n")
+cat("Missing rows:", format(Q3_expected_rows - nrow(trips_panel), big.mark = ","), "\n")
 
 # Create complete panel
-study_panel <- expand_grid(
-  interval60 = unique(trips_panel$interval60),
-  start_station = unique(trips_panel$start_station)
+Q3_study_panel <- expand_grid(
+  interval60 = unique(Q3_trips_panel$interval60),
+  start_station = unique(Q3_trips_panel$start_station)
 ) %>%
   # Join trip counts
-  left_join(trips_panel %>% 
+  left_join(Q3_trips_panel %>% 
               select(interval60, start_station, Trip_Count),
             by = c("interval60", "start_station")) %>%
   # Replace NA trip counts with 0
   mutate(Trip_Count = replace_na(Trip_Count, 0))
 
-glimpse(study_panel)
-hist(study_panel$Trip_Count)
+glimpse(Q3_study_panel)
+hist(Q3_study_panel$Trip_Count)
 
 # Fill in station attributes (they're the same for all hours)
-station_attributes <- trips_panel %>%
+Q3_station_attributes <- Q3_trips_panel %>%
   group_by(start_station) %>%
   summarize(
     start_lat = first(start_lat),
@@ -1491,18 +1491,259 @@ station_attributes <- trips_panel %>%
     Total_Pop = first(Total_Pop)
   )
 
-glimpse(station_attributes)
+glimpse(Q3_station_attributes)
 
-study_panel <- study_panel %>%
+Q3_study_panel <- Q3_study_panel %>%
   left_join(station_attributes, by = "start_station")
 
-glimpse(study_panel)
+glimpse(Q3_study_panel)
 
 # Verify we have complete panel
-cat("Complete panel rows:", format(nrow(study_panel), big.mark = ","), "\n")
+cat("Complete panel rows:", format(nrow(Q3_study_panel), big.mark = ","), "\n")
 ```  
+```{r add_time_features}
+Q3_study_panel <- Q3_study_panel %>%
+  mutate(
+    week = week(interval60),
+    month = month(interval60, label = TRUE),
+    dotw = wday(interval60, label = TRUE),
+    hour = hour(interval60),
+    date = as.Date(interval60),
+    weekend = ifelse(dotw %in% c("Sat", "Sun"), 1, 0),
+    rush_hour = ifelse(hour %in% c(7, 8, 9, 16, 17, 18), 1, 0)
+  )
+
+glimpse(Q3_study_panel)
+```
+
+```{r join_weather}
+Q3_study_panel <- Q3_study_panel %>%
+  left_join(Q3_weather_complete, by = "interval60")
+
+glimpse(Q3_study_panel)
+
+# Check for missing values
+summary(Q3_study_panel %>% select(Trip_Count, Temperature, Precipitation))
+```
+
+```{r create_lags}
+# Sort by station and time
+Q3_study_panel <- Q3_study_panel %>%
+  arrange(start_station, interval60)
+
+# Create lag variables WITHIN each station
+Q3_study_panel <- Q3_study_panel %>%
+  group_by(start_station) %>%
+  mutate(
+    lag1Hour = lag(Trip_Count, 1),
+    lag2Hours = lag(Trip_Count, 2),
+    lag3Hours = lag(Trip_Count, 3),
+    lag12Hours = lag(Trip_Count, 12),
+    lag1day = lag(Trip_Count, 24)
+  ) %>%
+  ungroup()
+
+# Remove rows with NA lags (first 24 hours for each station)
+Q3_study_panel_complete <- Q3_study_panel %>%
+  filter(!is.na(lag1day))
+
+cat("Rows after removing NA lags:", format(nrow(Q3_study_panel_complete), big.mark = ","), "\n")
+```
+
+```{r lag_correlations}
+# Sample one station to visualize
+Q3_example_station <- Q3_study_panel_complete %>%
+  filter(start_station == first(start_station)) %>%
+  head(168)  # One week
+
+# Plot actual vs lagged demand
+ggplot(Q3_example_station, aes(x = interval60)) +
+  geom_line(aes(y = Trip_Count, color = "Current"), linewidth = 1) +
+  geom_line(aes(y = lag1Hour, color = "1 Hour Ago"), linewidth = 1, alpha = 0.7) +
+  geom_line(aes(y = lag1day, color = "24 Hours Ago"), linewidth = 1, alpha = 0.7) +
+  scale_color_manual(values = c(
+    "Current" = "#08519c",
+    "1 Hour Ago" = "#3182bd",
+    "24 Hours Ago" = "#6baed6"
+  )) +
+  labs(
+    title = "Temporal Lag Patterns at One Station",
+    subtitle = "Past demand predicts future demand",
+    x = "Date-Time",
+    y = "Trip Count",
+    color = "Time Period"
+  ) +
+  plotTheme
+```
+
+```{r temporal-split}
+# Split by week
+# Q1 has weeks 26-39 (JUL-SEP)
+# Train on weeks 26-35 (JUL 1 - early SEP)
+# Test on weeks 36-39 (rest of SEP)
+
+# Which stations have trips in BOTH early and late periods?
+Q3_early_stations <- Q3_study_panel_complete %>%
+  filter(week < 36) %>%
+  filter(Trip_Count > 0) %>%
+  distinct(start_station) %>%
+  pull(start_station)
+
+Q3_late_stations <- Q3_study_panel_complete %>%
+  filter(week >= 36) %>%
+  filter(Trip_Count > 0) %>%
+  distinct(start_station) %>%
+  pull(start_station)
+
+# Keep only stations that appear in BOTH periods
+Q3_common_stations <- intersect(Q3_early_stations, Q3_late_stations)
+
+
+# Filter panel to only common stations
+Q3_study_panel_complete <- Q3_study_panel_complete %>%
+  filter(start_station %in% Q3_common_stations)
+
+# FIX ERROR: Find stations in both train and test periods
+Q3_common_stations <- intersect(
+  Q3_study_panel_complete %>% filter(week < 36) %>% pull(start_station) %>% unique(),
+  Q3_study_panel_complete %>% filter(week >= 36) %>% pull(start_station) %>% unique()
+)
+# FIX ERROR: Filter BEFORE splitting
+Q3_study_panel_complete <- Q3_study_panel_complete %>%
+  filter(start_station %in% Q3_common_stations)
+
+# NOW create train/test split
+Q3_train <- Q3_study_panel_complete %>%
+  filter(week < 36)
+
+Q3_test <- Q3_study_panel_complete %>%
+  filter(week >= 36)
+
+cat("Training observations:", format(nrow(Q3_train), big.mark = ","), "\n")
+cat("Testing observations:", format(nrow(Q3_test), big.mark = ","), "\n")
+cat("Training date range:", min(Q3_train$date), "to", max(Q3_train$date), "\n")
+cat("Testing date range:", min(Q3_test$date), "to", max(Q3_test$date), "\n")
+
+#FIX ERROR
+Q3_test$start_station <- factor(
+  Q3_test$start_station,
+  levels = levels(Q3_train$start_station)
+)
+
+```
+   
     -   Create the same 5 models
-    -   Calculate MAE for each model
+    
+```{r model1}
+
+# Create day of week factor with treatment (dummy) coding
+Q3_train <- Q3_train %>%
+  mutate(dotw_simple = factor(dotw, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
+
+# Set contrasts to treatment coding (dummy variables)
+contrasts(Q3_train$dotw_simple) <- contr.treatment(7)
+
+# Now run the model
+Q3_model1 <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation,
+  data = Q3_train
+)
+
+summary(Q3_model1)
+```    
+```{r model2}
+Q3_model2 <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day,
+  data = Q3_train
+)
+
+summary(Q3_model2)
+```
+
+```{r model3}
+Q3_model3 <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day +
+    Med_Inc + Percent_Taking_Transit + Percent_White,
+  data = Q3_train
+)
+
+summary(Q3_model3)
+```
+
+```{r model4}
+Q3_model4 <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day +
+    Med_Inc + Percent_Taking_Transit + Percent_White +
+    as.factor(start_station),
+  data = Q3_train
+)
+
+# Summary too long with all station dummies, just show key metrics
+cat("Q3 Model 4 R-squared:", summary(Q3_model4)$r.squared, "\n")
+cat("Q3 Model 4 Adj R-squared:", summary(Q3_model4)$adj.r.squared, "\n")
+```
+   
+```{r model5}
+Q3_model5 <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day + rush_hour + as.factor(month) +
+    Med_Inc + Percent_Taking_Transit + Percent_White +
+    as.factor(start_station) +
+    rush_hour * weekend,  # Rush hour effects different on weekends
+  data = Q3_train
+)
+
+cat("Q3 Model 5 R-squared:", summary(Q3_model5)$r.squared, "\n")
+cat("Q3 Model 5 Adj R-squared:", summary(Q3_model5)$adj.r.squared, "\n")
+```
+
+    -   Calculate MAE for each model 
+```{r calculate_mae} 
+# Get predictions on test set
+
+# Create day of week factor with treatment (dummy) coding
+Q3_test <- Q3_test %>%
+  mutate(dotw_simple = factor(dotw, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
+
+# Set contrasts to treatment coding (dummy variables)
+contrasts(Q3_test$dotw_simple) <- contr.treatment(7)
+
+Q3_test <- Q3_test %>%
+  mutate(
+    pred1 = predict(Q3_model1, newdata = Q3_test),
+    pred2 = predict(Q3_model2, newdata = Q3_test),
+    pred3 = predict(Q3_model3, newdata = Q3_test),
+    pred4 = predict(Q3_model4, newdata = Q3_test),
+    pred5 = predict(Q3_model5, newdata = Q3_test)
+  )
+
+# Calculate MAE for each model
+Q3_mae_results <- data.frame(
+  Model = c(
+    "1. Time + Weather",
+    "2. + Temporal Lags",
+    "3. + Demographics",
+    "4. + Station FE",
+    "5. + Rush Hour Interaction"
+  ),
+  MAE = c(
+    mean(abs(Q3_test$Trip_Count - Q3_test$pred1), na.rm = TRUE),
+    mean(abs(Q3_test$Trip_Count - Q3_test$pred2), na.rm = TRUE),
+    mean(abs(Q3_test$Trip_Count - Q3_test$pred3), na.rm = TRUE),
+    mean(abs(Q3_test$Trip_Count - Q3_test$pred4), na.rm = TRUE),
+    mean(abs(Q3_test$Trip_Count - Q3_test$pred5), na.rm = TRUE)
+  )
+)
+
+kable(Q3_mae_results, 
+      digits = 2,
+      caption = "Mean Absolute Error by Model (Test Set)",
+      col.names = c("Model", "MAE (trips)")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
 
 3.  **Compare results** to Q1 2025:
 
@@ -1515,13 +1756,223 @@ cat("Complete panel rows:", format(nrow(study_panel), big.mark = ","), "\n")
 Analyze your model's errors in detail:
 
 1.  **Spatial patterns:**
+```{r obs_vs_pred}
+#| message: false
+#| warning: false
 
-    -   Create error maps
-    -   Identify neighborhoods with high errors
-    -   Hypothesize why (missing features? different demand patterns?)
+Q3_test <- Q3_test %>%
+  mutate(
+    error = Trip_Count - pred2,
+    abs_error = abs(error),
+    time_of_day = case_when(
+      hour < 7 ~ "Overnight",
+      hour >= 7 & hour < 10 ~ "AM Rush",
+      hour >= 10 & hour < 15 ~ "Mid-Day",
+      hour >= 15 & hour <= 18 ~ "PM Rush",
+      hour > 18 ~ "Evening"
+    )
+  )
+
+# Scatter plot by time and day type
+ggplot(Q3_test, aes(x = Trip_Count, y = pred2)) +
+  geom_point(alpha = 0.2, color = "#3182bd") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linewidth = 1) +
+  geom_smooth(method = "lm", se = FALSE, color = "darkgreen") +
+  facet_grid(weekend ~ time_of_day) +
+  labs(
+    title = "Observed vs. Predicted Bike Trips (Q3)",
+    subtitle = "Model 2 performance by time period",
+    x = "Observed Trips",
+    y = "Predicted Trips",
+    caption = "Red line = perfect predictions; Green line = actual model fit"
+  ) +
+  plotTheme
+```
+  
+```{r spatial_errors}
+# Calculate MAE by station
+Q3_station_errors <- Q3_test %>%
+  group_by(start_station, start_lat, start_lon) %>%
+  summarize(
+    MAE = mean(abs_error, na.rm = TRUE),
+    avg_demand = mean(Trip_Count, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(!is.na(start_lat), !is.na(start_lon))
+
+## Create Two Maps Side-by-Side with Proper Legends (sorry these maps are ugly)
+
+# Calculate station errors
+Q3_station_errors <- Q3_test %>%
+  filter(!is.na(pred2)) %>%
+  group_by(start_station, start_lat, start_lon) %>%
+  summarize(
+    MAE = mean(abs(Trip_Count - pred2), na.rm = TRUE),
+    avg_demand = mean(Trip_Count, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(!is.na(start_lat), !is.na(start_lon))
+
+# Map 1: Prediction Errors
+Q3_p1 <- ggplot() +
+  geom_sf(data = philly_census, fill = "grey95", color = "white", size = 0.2) +
+  geom_point(
+    data = Q3_station_errors,
+    aes(x = start_lon, y = start_lat, color = MAE),
+    size = 3.5,
+    alpha = 0.7
+  ) +
+  scale_color_viridis(
+    option = "plasma",
+    name = "MAE\n(trips)",
+    direction = -1,
+    breaks = c(0.5, 1.0, 1.5),  # Fewer, cleaner breaks
+    labels = c("0.5", "1.0", "1.5")
+  ) +
+  labs(title = "Prediction Errors",
+       subtitle = "Higher in Center City") +
+  mapTheme +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  ) +
+  guides(color = guide_colorbar(
+    barwidth = 1.5,
+    barheight = 12,
+    title.position = "top",
+    title.hjust = 0.5
+  ))
+
+# Map 2: Average Demand
+Q3_p2 <- ggplot() +
+  geom_sf(data = philly_census, fill = "grey95", color = "white", size = 0.2) +
+  geom_point(
+    data = Q3_station_errors,
+    aes(x = start_lon, y = start_lat, color = avg_demand),
+    size = 3.5,
+    alpha = 0.7
+  ) +
+  scale_color_viridis(
+    option = "viridis",
+    name = "Avg\nDemand",
+    direction = -1,
+    breaks = c(0.5, 1.0, 1.5, 2.0, 2.5),  # Clear breaks
+    labels = c("0.5", "1.0", "1.5", "2.0", "2.5")
+  ) +
+  labs(title = "Average Demand",
+       subtitle = "Trips per station-hour") +
+  mapTheme +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  ) +
+  guides(color = guide_colorbar(
+    barwidth = 1.5,
+    barheight = 12,
+    title.position = "top",
+    title.hjust = 0.5
+  ))
+
+
+
+
+# Map 1: Prediction Errors
+Q3_p1 <- ggplot() +
+  geom_sf(data = philly_census, fill = "grey95", color = "white", size = 0.1) +
+  geom_point(
+    data = Q3_station_errors,
+    aes(x = start_lon, y = start_lat, color = MAE),
+    size = 3.5,
+    alpha = 0.7
+  ) +
+  scale_color_viridis(
+    option = "plasma",
+    name = "MAE (trips)",
+    direction = -1,
+    breaks = c(0.5, 1.0, 1.5),
+    labels = c("0.5", "1.0", "1.5")
+  ) +
+  labs(title = "Prediction Errors") +
+  mapTheme +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  ) +
+  guides(color = guide_colorbar(
+    barwidth = 12,
+    barheight = 1,
+    title.position = "top",
+    title.hjust = 0.5
+  ))
+
+# Map 2: Average Demand  
+Q3_p2 <- ggplot() +
+  geom_sf(data = philly_census, fill = "grey95", color = "white", size = 0.1) +
+  geom_point(
+    data = Q3_station_errors,
+    aes(x = start_lon, y = start_lat, color = avg_demand),
+    size = 3.5,
+    alpha = 0.7
+  ) +
+  scale_color_viridis(
+    option = "viridis",
+    name = "Avg Demand (trips/hour)",
+    direction = -1,
+    breaks = c(0.5, 1.0, 1.5, 2.0, 2.5),
+    labels = c("0.5", "1.0", "1.5", "2.0", "2.5")
+  ) +
+  labs(title = "Average Demand") +
+  mapTheme +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  ) +
+  guides(color = guide_colorbar(
+    barwidth = 12,
+    barheight = 1,
+    title.position = "top",
+    title.hjust = 0.5
+  ))
+
+# Combine
+(Q3_p1 | Q3_p2)
+
+```
 
 2.  **Temporal patterns:**
+```{r temporal_errors}
+# MAE by time of day and day type
+Q3_temporal_errors <- Q3_test %>%
+  group_by(time_of_day, weekend) %>%
+  summarize(
+    MAE = mean(abs_error, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(day_type = ifelse(weekend == 1, "Weekend", "Weekday"))
 
+ggplot(Q3_temporal_errors, aes(x = time_of_day, y = MAE, fill = day_type)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("Weekday" = "#08519c", "Weekend" = "#6baed6")) +
+  labs(
+    title = "Prediction Errors by Time Period",
+    subtitle = "When is the model struggling most?",
+    x = "Time of Day",
+    y = "Mean Absolute Error (trips)",
+    fill = "Day Type"
+  ) +
+  plotTheme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
     -   When are errors highest?
     -   Do certain hours/days have systematic under/over-prediction?
     -   Are there seasonal patterns?
