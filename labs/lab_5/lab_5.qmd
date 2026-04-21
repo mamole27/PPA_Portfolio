@@ -28,18 +28,6 @@ Imagine you're an Indego operations manager at 6:00 AM on a Monday morning. You 
 
 This lab will teach you to build predictive models that forecast bike share demand across **space** (different stations) and **time** (different hours) to help solve this operational problem.
 
-## Learning Objectives
-
-By the end of this assignment, you will be able to:
-
-1.  **Understand panel data structure** for space-time analysis
-2.  **Create temporal lag variables** to capture demand persistence
-3.  **Build multiple predictive models** with increasing complexity
-4.  **Validate models temporally** (train on past, test on future)
-5.  **Analyze prediction errors** in both space and time
-6.  **Engineer new features** based on error patterns
-7.  **Critically evaluate** when prediction errors matter most
-
 ## Assignment Structure
 
 **Part 1 (In-Class/Together):** Work through Q1 2025 data following this code
@@ -97,15 +85,6 @@ mapTheme <- theme_void() +
   )
 
 palette5 <- c("#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c")
-```
-
-```{r set-census-api-key}
-#DONT NEED
-
-census_api_key(Sys.getenv("CENSUS_API_KEY"))
-
-#Use the following code if you're not able to access the key in your environment
-#census_api_key("yourkeyhere", install=TRUE, overwrite=TRUE)
 ```
 
 # IMPORT AND PREP DATA
@@ -1243,16 +1222,17 @@ indegoQ3 <- indegoQ3 %>%
 # Look at temporal features
 head(indegoQ3 %>% select(start_datetime, interval60, week, dotw, hour, weekend))
 ```
+
 ```{r trips_over_time}
 #| message: false
 #| warning: false
 
 # Daily trip counts
-daily_trips <- indegoQ3 %>%
+Q3_daily_trips <- indegoQ3 %>%
   group_by(date) %>%
   summarize(trips = n())
 
-ggplot(daily_trips, aes(x = date, y = trips)) +
+ggplot(Q3_daily_trips, aes(x = date, y = trips)) +
   geom_line(color = "#3182bd", linewidth = 1) +
   geom_smooth(se = FALSE, color = "red", linetype = "dashed") +
   labs(
@@ -1264,6 +1244,7 @@ ggplot(daily_trips, aes(x = date, y = trips)) +
   ) +
   plotTheme
 ```
+
 ```{r hourly_patterns}
 # Average trips by hour and day type
 Q3_hourly_patterns <- indegoQ3 %>%
@@ -1283,6 +1264,7 @@ ggplot(Q3_hourly_patterns, aes(x = hour, y = avg_trips, color = day_type)) +
   ) +
   plotTheme
 ```
+
 ```{r top_stations}
 # Most popular origin stations
 Q3_top_stations <- indegoQ3 %>%
@@ -1349,7 +1331,7 @@ ggplot() +
   ) +
   # Stations with census data (small grey dots)
   geom_point(
-    data = stations_for_map %>% filter(has_census),
+    data = Q3_stations_for_map %>% filter(has_census),
     aes(x = start_lon, y = start_lat),
     color = "grey30", size = 1, alpha = 0.6
   ) +
@@ -1367,6 +1349,7 @@ ggplot() +
   mapTheme
 
 ```
+
 ```{r}
 # Identify which stations to keep
 Q3_valid_stations <- Q3_stations_census %>%
@@ -1388,133 +1371,139 @@ Q3_indego_census <- indegoQ3 %>%
 2.  **Adapt this code** to work with your quarter:
 
     -   Update date ranges for weather data
-```{r get_weather}
-# Get weather from Philadelphia International Airport (KPHL)
-# This covers Q1 2025: January 1 - March 31
-Q3_weather_data <- riem_measures(
-  station = "PHL",  # Philadelphia International Airport
-  date_start = "2025-07-01",
-  date_end = "2025-09-30"
-)
 
-# Process weather data
-Q3_weather_processed <- Q3_weather_data %>%
-  mutate(
-    interval60 = floor_date(valid, unit = "hour"),
-    Temperature = tmpf,  # Temperature in Fahrenheit
-    Precipitation = ifelse(is.na(p01i), 0, p01i),  # Hourly precip in inches
-    Wind_Speed = sknt  # Wind speed in knots
-  ) %>%
-  select(interval60, Temperature, Precipitation, Wind_Speed) %>%
-  distinct(interval60, .keep_all = TRUE)
+    ```{r get_weather}
+    # Get weather from Philadelphia International Airport (KPHL)
+    # This covers Q1 2025: January 1 - March 31
+    Q3_weather_data <- riem_measures(
+      station = "PHL",  # Philadelphia International Airport
+      date_start = "2025-07-01",
+      date_end = "2025-09-30"
+    )
 
-# Check for missing hours and interpolate if needed
-Q3_weather_complete <- Q3_weather_processed %>%
-  complete(interval60 = seq(min(interval60), max(interval60), by = "hour")) %>%
-  fill(Temperature, Precipitation, Wind_Speed, .direction = "down")
+    # Process weather data
+    Q3_weather_processed <- Q3_weather_data %>%
+      mutate(
+        interval60 = floor_date(valid, unit = "hour"),
+        Temperature = tmpf,  # Temperature in Fahrenheit
+        Precipitation = ifelse(is.na(p01i), 0, p01i),  # Hourly precip in inches
+        Wind_Speed = sknt  # Wind speed in knots
+      ) %>%
+      select(interval60, Temperature, Precipitation, Wind_Speed) %>%
+      distinct(interval60, .keep_all = TRUE)
 
-# Look at the weather
-summary(Q3_weather_complete %>% select(Temperature, Precipitation, Wind_Speed))
-```
-```{r visualize-weather}
-#| message: false
-#| warning: false
-#| 
-ggplot(Q3_weather_complete, aes(x = interval60, y = Temperature)) +
-  geom_line(color = "#3182bd", alpha = 0.7) +
-  geom_smooth(se = FALSE, color = "red") +
-  labs(
-    title = "Philadelphia Temperature - Q3 2025",
-    subtitle = "Winter to early spring transition",
-    x = "Date",
-    y = "Temperature (°F)"
-  ) +
-  plotTheme
-```
+    # Check for missing hours and interpolate if needed
+    Q3_weather_complete <- Q3_weather_processed %>%
+      complete(interval60 = seq(min(interval60), max(interval60), by = "hour")) %>%
+      fill(Temperature, Precipitation, Wind_Speed, .direction = "down")
+
+    # Look at the weather
+    summary(Q3_weather_complete %>% select(Temperature, Precipitation, Wind_Speed))
+    ```
+
+    ```{r visualize-weather}
+    #| message: false
+    #| warning: false
+    #| 
+    ggplot(Q3_weather_complete, aes(x = interval60, y = Temperature)) +
+      geom_line(color = "#3182bd", alpha = 0.7) +
+      geom_smooth(se = FALSE, color = "red") +
+      labs(
+        title = "Philadelphia Temperature - Q3 2025",
+        subtitle = "Winter to early spring transition",
+        x = "Date",
+        y = "Temperature (°F)"
+      ) +
+      plotTheme
+    ```
+
     -   Check for any data structure changes
-```{r aggregate-trips}
-#| message: false
-#| warning: false
 
-# Count trips by station-hour
-Q3_trips_panel <- Q3_indego_census %>%
-  group_by(interval60, start_station, start_lat, start_lon,
-           Med_Inc, Percent_Taking_Transit, Percent_White, Total_Pop) %>%
-  summarize(Trip_Count = n()) %>%
-  ungroup()
+    ```{r aggregate-trips}
+    #| message: false
+    #| warning: false
 
-# How many station-hour observations?
-nrow(Q3_trips_panel)
+    # Count trips by station-hour
+    Q3_trips_panel <- Q3_indego_census %>%
+      group_by(interval60, start_station, start_lat, start_lon,
+               Med_Inc, Percent_Taking_Transit, Percent_White, Total_Pop) %>%
+      summarize(Trip_Count = n()) %>%
+      ungroup()
 
-# How many unique stations?
-length(unique(Q3_trips_panel$start_station))
+    # How many station-hour observations?
+    nrow(Q3_trips_panel)
 
-# How many unique hours?
-length(unique(Q3_trips_panel$interval60))
+    # How many unique stations?
+    length(unique(Q3_trips_panel$start_station))
 
-hist(Q3_trips_panel$Trip_Count)
-```
-```{r complete-panel}
-# Calculate expected panel size
-Q3_n_stations <- length(unique(Q3_trips_panel$start_station))
-Q3_n_hours <- length(unique(trips_panel$interval60))
-Q3_expected_rows <- Q3_n_stations * Q3_n_hours
+    # How many unique hours?
+    length(unique(Q3_trips_panel$interval60))
 
-cat("Expected panel rows:", format(Q3_expected_rows, big.mark = ","), "\n")
-cat("Current rows:", format(nrow(Q3_trips_panel), big.mark = ","), "\n")
-cat("Missing rows:", format(Q3_expected_rows - nrow(trips_panel), big.mark = ","), "\n")
+    hist(Q3_trips_panel$Trip_Count)
+    ```
 
-# Create complete panel
-Q3_study_panel <- expand_grid(
-  interval60 = unique(Q3_trips_panel$interval60),
-  start_station = unique(Q3_trips_panel$start_station)
-) %>%
-  # Join trip counts
-  left_join(Q3_trips_panel %>% 
-              select(interval60, start_station, Trip_Count),
-            by = c("interval60", "start_station")) %>%
-  # Replace NA trip counts with 0
-  mutate(Trip_Count = replace_na(Trip_Count, 0))
+    ```{r complete-panel}
+    # Calculate expected panel size
+    Q3_n_stations <- length(unique(Q3_trips_panel$start_station))
+    Q3_n_hours <- length(unique(trips_panel$interval60))
+    Q3_expected_rows <- Q3_n_stations * Q3_n_hours
 
-glimpse(Q3_study_panel)
-hist(Q3_study_panel$Trip_Count)
+    cat("Expected panel rows:", format(Q3_expected_rows, big.mark = ","), "\n")
+    cat("Current rows:", format(nrow(Q3_trips_panel), big.mark = ","), "\n")
+    cat("Missing rows:", format(Q3_expected_rows - nrow(trips_panel), big.mark = ","), "\n")
 
-# Fill in station attributes (they're the same for all hours)
-Q3_station_attributes <- Q3_trips_panel %>%
-  group_by(start_station) %>%
-  summarize(
-    start_lat = first(start_lat),
-    start_lon = first(start_lon),
-    Med_Inc = first(Med_Inc),
-    Percent_Taking_Transit = first(Percent_Taking_Transit),
-    Percent_White = first(Percent_White),
-    Total_Pop = first(Total_Pop)
-  )
+    # Create complete panel
+    Q3_study_panel <- expand_grid(
+      interval60 = unique(Q3_trips_panel$interval60),
+      start_station = unique(Q3_trips_panel$start_station)
+    ) %>%
+      # Join trip counts
+      left_join(Q3_trips_panel %>% 
+                  select(interval60, start_station, Trip_Count),
+                by = c("interval60", "start_station")) %>%
+      # Replace NA trip counts with 0
+      mutate(Trip_Count = replace_na(Trip_Count, 0))
 
-glimpse(Q3_station_attributes)
+    glimpse(Q3_study_panel)
+    hist(Q3_study_panel$Trip_Count)
 
-Q3_study_panel <- Q3_study_panel %>%
-  left_join(station_attributes, by = "start_station")
+    # Fill in station attributes (they're the same for all hours)
+    Q3_station_attributes <- Q3_trips_panel %>%
+      group_by(start_station) %>%
+      summarize(
+        start_lat = first(start_lat),
+        start_lon = first(start_lon),
+        Med_Inc = first(Med_Inc),
+        Percent_Taking_Transit = first(Percent_Taking_Transit),
+        Percent_White = first(Percent_White),
+        Total_Pop = first(Total_Pop)
+      )
 
-glimpse(Q3_study_panel)
+    glimpse(Q3_station_attributes)
 
-# Verify we have complete panel
-cat("Complete panel rows:", format(nrow(Q3_study_panel), big.mark = ","), "\n")
-```  
-```{r add_time_features}
-Q3_study_panel <- Q3_study_panel %>%
-  mutate(
-    week = week(interval60),
-    month = month(interval60, label = TRUE),
-    dotw = wday(interval60, label = TRUE),
-    hour = hour(interval60),
-    date = as.Date(interval60),
-    weekend = ifelse(dotw %in% c("Sat", "Sun"), 1, 0),
-    rush_hour = ifelse(hour %in% c(7, 8, 9, 16, 17, 18), 1, 0)
-  )
+    Q3_study_panel <- Q3_study_panel %>%
+      left_join(station_attributes, by = "start_station")
 
-glimpse(Q3_study_panel)
-```
+    glimpse(Q3_study_panel)
+
+    # Verify we have complete panel
+    cat("Complete panel rows:", format(nrow(Q3_study_panel), big.mark = ","), "\n")
+    ```
+
+    ```{r add_time_features}
+    Q3_study_panel <- Q3_study_panel %>%
+      mutate(
+        week = week(interval60),
+        month = month(interval60, label = TRUE),
+        dotw = wday(interval60, label = TRUE),
+        hour = hour(interval60),
+        date = as.Date(interval60),
+        weekend = ifelse(dotw %in% c("Sat", "Sun"), 1, 0),
+        rush_hour = ifelse(hour %in% c(7, 8, 9, 16, 17, 18), 1, 0)
+      )
+
+    glimpse(Q3_study_panel)
+    ```
 
 ```{r join_weather}
 Q3_study_panel <- Q3_study_panel %>%
@@ -1578,13 +1567,13 @@ ggplot(Q3_example_station, aes(x = interval60)) +
 
 ```{r temporal-split}
 # Split by week
-# Q1 has weeks 26-39 (JUL-SEP)
-# Train on weeks 26-35 (JUL 1 - early SEP)
+# Q3 has weeks 27-39 (JUL-SEP)
+# Train on weeks 27-35 (JUL 1 - early SEP)
 # Test on weeks 36-39 (rest of SEP)
 
 # Which stations have trips in BOTH early and late periods?
 Q3_early_stations <- Q3_study_panel_complete %>%
-  filter(week < 36) %>%
+  filter(week <36 ) %>%
   filter(Trip_Count > 0) %>%
   distinct(start_station) %>%
   pull(start_station)
@@ -1603,15 +1592,6 @@ Q3_common_stations <- intersect(Q3_early_stations, Q3_late_stations)
 Q3_study_panel_complete <- Q3_study_panel_complete %>%
   filter(start_station %in% Q3_common_stations)
 
-# FIX ERROR: Find stations in both train and test periods
-Q3_common_stations <- intersect(
-  Q3_study_panel_complete %>% filter(week < 36) %>% pull(start_station) %>% unique(),
-  Q3_study_panel_complete %>% filter(week >= 36) %>% pull(start_station) %>% unique()
-)
-# FIX ERROR: Filter BEFORE splitting
-Q3_study_panel_complete <- Q3_study_panel_complete %>%
-  filter(start_station %in% Q3_common_stations)
-
 # NOW create train/test split
 Q3_train <- Q3_study_panel_complete %>%
   filter(week < 36)
@@ -1619,29 +1599,15 @@ Q3_train <- Q3_study_panel_complete %>%
 Q3_test <- Q3_study_panel_complete %>%
   filter(week >= 36)
 
-#FIX ERROR Convert to factor in TRAIN FIRST
-Q3_train$start_station <- factor(Q3_train$start_station)
-#FIX ERROR Match TEST to TRAIN levels
-Q3_test$start_station <- factor(
-  Q3_test$start_station,
-  levels = levels(Q3_train$start_station)
-)
-
 cat("Training observations:", format(nrow(Q3_train), big.mark = ","), "\n")
 cat("Testing observations:", format(nrow(Q3_test), big.mark = ","), "\n")
 cat("Training date range:", min(Q3_train$date), "to", max(Q3_train$date), "\n")
 cat("Testing date range:", min(Q3_test$date), "to", max(Q3_test$date), "\n")
 
-#FIX ERROR
-# Q3_test$start_station <- factor(
-#   Q3_test$start_station,
-#   levels = levels(Q3_train$start_station)
-# )
-
 ```
-   
-    -   Create the same 5 models
-    
+
+-   Create the same 5 models
+
 ```{r model1}
 
 # Create day of week factor with treatment (dummy) coding
@@ -1658,7 +1624,8 @@ Q3_model1 <- lm(
 )
 
 summary(Q3_model1)
-```    
+```
+
 ```{r model2}
 Q3_model2 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
@@ -1693,7 +1660,7 @@ Q3_model4 <- lm(
 cat("Q3 Model 4 R-squared:", summary(Q3_model4)$r.squared, "\n")
 cat("Q3 Model 4 Adj R-squared:", summary(Q3_model4)$adj.r.squared, "\n")
 ```
-   
+
 ```{r model5}
 Q3_model5 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
@@ -1708,8 +1675,11 @@ cat("Q3 Model 5 R-squared:", summary(Q3_model5)$r.squared, "\n")
 cat("Q3 Model 5 Adj R-squared:", summary(Q3_model5)$adj.r.squared, "\n")
 ```
 
-    -   Calculate MAE for each model 
-```{r calculate_mae} 
+```         
+-   Calculate MAE for each model 
+```
+
+```{r calculate_mae}
 # Get predictions on test set
 
 # Create day of week factor with treatment (dummy) coding
@@ -1717,21 +1687,7 @@ Q3_test <- Q3_test %>%
   mutate(dotw_simple = factor(dotw, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
 
 # Set contrasts to treatment coding (dummy variables)
-#contrasts(Q3_test$dotw_simple) <- contr.treatment(7)
-
-# Force test stations to match training levels
-# Q3_test$start_station <- factor(
-#   Q3_test$start_station,
-#   levels = levels(factor(Q3_train$start_station))
-# )
-
-# Keep only stations that exist in training
-Q3_test <- Q3_test %>%
-  filter(start_station %in% unique(Q3_train$start_station))
-Q3_test$start_station <- factor(
-  Q3_test$start_station,
-  levels = levels(Q3_train$start_station)
-)
+contrasts(Q3_test$dotw_simple) <- contr.treatment(7)
 
 Q3_test <- Q3_test %>%
   mutate(
@@ -1772,12 +1728,14 @@ kable(Q3_mae_results,
     -   How do MAE values compare? Why might they differ?
     -   Are temporal patterns different (e.g., summer vs. winter)?
     -   Which features are most important in your quarter?
+The MAE values are higher for all 5 models in Q3 than in Q1. However, in both quarters, model 2 performs the best, so they have the same most important features. Ridership overall is lower in Q1, probably because it's colder and the weather is generally less pleasant for riding (and, thinking about this year, there were several stations that were completely snowed in for several weeks, compeltely eliminating ridership from those stations, a phenomenon only occurring in winter). But since ridership is consistently lower in Q1, it may be easier to predict demand as compared to summer when ridership is higher but may have more irregular patterns.
 
 ## Part 2: Error Analysis
 
 Analyze your model's errors in detail:
 
 1.  **Spatial patterns:**
+
 ```{r obs_vs_pred}
 #| message: false
 #| warning: false
@@ -1810,7 +1768,7 @@ ggplot(Q3_test, aes(x = Trip_Count, y = pred2)) +
   ) +
   plotTheme
 ```
-  
+
 ```{r spatial_errors}
 # Calculate MAE by station
 Q3_station_errors <- Q3_test %>%
@@ -1972,6 +1930,7 @@ Q3_p2 <- ggplot() +
 ```
 
 2.  **Temporal patterns:**
+
 ```{r temporal_errors}
 # MAE by time of day and day type
 Q3_temporal_errors <- Q3_test %>%
@@ -1995,11 +1954,15 @@ ggplot(Q3_temporal_errors, aes(x = time_of_day, y = MAE, fill = day_type)) +
   plotTheme +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-    -   When are errors highest?
-    -   Do certain hours/days have systematic under/over-prediction?
-    -   Are there seasonal patterns?
+
+```         
+-   When are errors highest? WEEKDAY & WEEKEND PM RUSH
+-   Do certain hours/days have systematic under/over-prediction? RUSH HOURS
+-   Are there seasonal patterns?
+```
 
 3.  **Demographic patterns:**
+
 ```{r errors_demographics}
 #| message: false
 #| warning: false
@@ -2013,93 +1976,180 @@ Q3_station_errors_demo <- Q3_station_errors %>%
   filter(!is.na(Med_Inc))
 
 # Create plots
-p1 <- ggplot(station_errors_demo, aes(x = Med_Inc, y = MAE)) +
+Q3_p1 <- ggplot(Q3_station_errors_demo, aes(x = Med_Inc, y = MAE)) +
   geom_point(alpha = 0.5, color = "#3182bd") +
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   scale_x_continuous(labels = scales::dollar) +
   labs(title = "Errors vs. Median Income", x = "Median Income", y = "MAE") +
   plotTheme
 
-p2 <- ggplot(station_errors_demo, aes(x = Percent_Taking_Transit, y = MAE)) +
+Q3_p2 <- ggplot(Q3_station_errors_demo, aes(x = Percent_Taking_Transit, y = MAE)) +
   geom_point(alpha = 0.5, color = "#3182bd") +
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   labs(title = "Errors vs. Transit Usage", x = "% Taking Transit", y = "MAE") +
   plotTheme
 
-p3 <- ggplot(station_errors_demo, aes(x = Percent_White, y = MAE)) +
+Q3_p3 <- ggplot(Q3_station_errors_demo, aes(x = Percent_White, y = MAE)) +
   geom_point(alpha = 0.5, color = "#3182bd") +
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   labs(title = "Errors vs. Race", x = "% White", y = "MAE") +
   plotTheme
 
-(p1 | p2) / (p3 | plot_spacer())
+(Q3_p1 | Q3_p2) / (Q3_p3 | plot_spacer())
 ```
-    -   Relate errors to census characteristics
-    -   Are certain communities systematically harder to predict?
-    -   What are the equity implications?
+
+```         
+-   Relate errors to census characteristics
+-   Are certain communities systematically harder to predict? HIGHER % WHITE, HIFHER MEDIAN INCOME, HIGHER % TAKING TRANSIT
+-   What are the equity implications? HIGHER INCOME AND HIGHER % WHITE TRACTS HAVE HIGHER MAE VALUES
+```
 
 ## Part 3: Feature Engineering & model improvement
 
 Based on your error analysis, add 2-3 NEW features to improve the model:
 
-**Potential features to consider:**
+**Features added**
 
 *Temporal features:*
 
--   Holiday indicators (Memorial Day, July 4th, Labor Day)
--   School calendar (Penn, Drexel, Temple in session?)
--   Special events (concerts, sports games, conventions)
--   Day of month (payday effects?)
+-   Holiday indicators (July 4th, Labor Day)
+
+```{R}
+Q3_spc_update <- Q3_study_panel_complete %>%
+  mutate(
+    holiday = ifelse(
+      date %in% as.Date(c("2025-07-04", "2025-09-01")), 1, 0
+    )
+  )
+```
 
 *Weather features:*
 
--   Feels-like temperature (wind chill/heat index)
 -   "Perfect biking weather" indicator (60-75°F, no rain)
--   Precipitation forecast (not just current)
--   Weekend + nice weather interaction
 
-*Spatial features:*
+```{R}
+Q3_spc_update <- Q3_study_panel_complete %>%
+  mutate(
+    perfect_weather = ifelse(
+      Temperature >= 60 & Temperature <= 75 & Precipitation == 0,
+      1, 0
+    )
+  )
+```
 
--   Distance to Center City
--   Distance to nearest university
--   Distance to nearest park
--   Points of interest nearby (restaurants, offices, bars)
--   Station capacity
--   Bike lane connectivity
+-   Extreme heat
 
-*Trip history features:*
-
--   Rolling 7-day average demand
--   Same hour last week
--   Station "type" clustering (residential, commercial, tourist)
+```{R}
+Q3_spc_update <- Q3_study_panel_complete %>%
+  mutate(
+    extreme_heat = ifelse(Temperature >= 90, 1, 0)
+  )
+```
 
 **Implementation:**
 
 -   Add your features to the best model
+```{r}
+Q3_mae_results
+
+Q3_best_model <- Q3_mae_results[which.min(Q3_mae_results$MAE), ]
+Q3_best_model
+
+Q3_train <- Q3_train %>%
+  mutate(
+    holiday = ifelse(date %in% as.Date(c("2025-07-04", "2025-09-01")), 1, 0),
+
+    perfect_weather = ifelse(
+      Temperature >= 60 & Temperature <= 75 & Precipitation == 0,
+      1, 0
+    ),
+
+    extreme_heat = ifelse(Temperature >= 90, 1, 0)
+  )
+
+Q3_bestmodel_improved <- lm(
+  Trip_Count ~ as.factor(hour) + dotw_simple +
+    Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day +
+    holiday + perfect_weather + extreme_heat,
+  data = Q3_train
+)
+```
+
 -   Compare MAE before and after
+```{r}
+Q3_test <- Q3_test %>%
+  mutate(
+    holiday = ifelse(date %in% as.Date(c("2025-07-04", "2025-09-01")), 1, 0),
+
+    perfect_weather = ifelse(
+      Temperature >= 60 & Temperature <= 75 & Precipitation == 0,
+      1, 0
+    ),
+
+    extreme_heat = ifelse(Temperature >= 90, 1, 0)
+  )
+
+Q3_test <- Q3_test %>%
+  mutate(
+    pred_base = predict(Q3_model2, newdata = Q3_test),
+    pred_improved = predict(Q3_bestmodel_improved, newdata = Q3_test)
+  )
+
+mae_base <- mean(abs(Q3_test$Trip_Count - Q3_test$pred_base), na.rm = TRUE)
+mae_improved <- mean(abs(Q3_test$Trip_Count - Q3_test$pred_improved), na.rm = TRUE)
+
+cat("Base Model 2 MAE:", mae_base, "\n")
+cat("Improved Model MAE:", mae_improved, "\n")
+```
+
 -   Explain *why* you chose these features
+  For holidays, I was interested by the example of the Superbowl and 2 of the suggested holidays were within the quarter I was already working with. For the weather features, I expect that days of extreme heat will be outliers in that bike ridership will be down whereas on "perfect beautiful biking days" ridership will be higher than normal or at least on track with summer ridership.
+
 -   Did they improve predictions? Where?
+  My added features only improved the model performance by 0.0004 in the MAE, which is a very small improvement. However, they also did not negatively impact the prediction. This suggests that model 2 was already pretty solid at predicting and that the factors I added to test on had little impact on the models ability to predict.
 
 **Try a poisson model for count data**
 
+```{r}
+Q3_poisson_improved <- glm(
+  Trip_Count ~ as.factor(hour) + dotw_simple +
+    Temperature + Precipitation +
+    lag1Hour + lag3Hours + lag1day +
+    holiday + perfect_weather + extreme_heat,
+  family = poisson,
+  data = Q3_train
+)
+
+Q3_test <- Q3_test %>%
+  mutate(
+    pred_poisson_improved = predict(
+      Q3_poisson_improved,
+      newdata = Q3_test,
+      type = "response"
+    )
+  )
+
+mae_poisson_improved <- mean(
+  abs(Q3_test$Trip_Count - Q3_test$pred_poisson_improved),
+  na.rm = TRUE
+)
+
+cat("Improved OLS MAE:", mae_improved, "\n")
+cat("Improved Poisson MAE:", mae_poisson_improved, "\n")
+```
+
 -   Does this improve model fit?
+  No the poisson did not perform better and had a higher MAE. The station fixed effects as identified in model 2 account well for prediction.
 
 ## Part 4: Critical Reflection
 
 Write 1-2 paragraphs addressing:
+    
+In my opinion, my best model (2) and my improved model, which performed similarly, are "good enough" in an academic setting for exploring general patterns of bike ridership and rebalancing needs, but may not be appropriate for use by Indego. Its predictions have errors during rush hours which may impacy ability to appropriately rebalance bikes. This model could be deployed to understand patterns but not as a totally accurate prediction model.
+The errors were higher in Center City and nearby neighborhoods, as well as in higher median income areas which could cause an imbalance in available bikes in those areas. The same errors exist in other neighborhoods too but when those neighborhoods already have lower ridership, the errors don't affect rebalancing. With higher errors in higher demand areas, this system could cause continued imbalance in bike redistribution in these areas.
+The model is not quickly sensitive enough to things like weather or holidays/events. With more time, I would focus additional features on spatial data, such as distance to downtown/Center City and additional research/data cleaning in the rush hour times of day in these areas to try to remediate some of the patterns in errors I saw while working through this assignment.
 
-1.  **Operational implications:**
-    -   Is your final MAE "good enough" for Indego to use?
-    -   When do prediction errors cause problems for rebalancing?
-    -   Would you recommend deploying this system? Under what conditions?
-2.  **Equity considerations:**
-    -   Do prediction errors disproportionately affect certain neighborhoods?
-    -   Could this system worsen existing disparities in bike access?
-    -   What safeguards would you recommend?
-3.  **Model limitations:**
-    -   What patterns is your model missing?
-    -   What assumptions might not hold in real deployment?
-    -   How would you improve this with more time/data?
 
 ------------------------------------------------------------------------
 
@@ -2118,14 +2168,5 @@ Write 1-2 paragraphs addressing:
     -   Critical reflection on deployment
 
 3.  **HTML output** with results and visualizations
-
-## Tips for Success
-
-1.  **Start early** - data download and processing takes time
-2.  **Work together** - pair programming is your friend
-3.  **Test incrementally** - don't wait until the end to run code
-4.  **Document everything** - explain your choices
-5.  **Be creative** - the best features come from understanding Philly!
-6.  **Think critically** - technical sophistication isn't enough
 
 ------------------------------------------------------------------------
