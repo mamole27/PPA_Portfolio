@@ -1193,7 +1193,7 @@ getwd()
 indegoQ3 <- read_csv(here("labs/lab_5/data/indego-trips-2025-q3.csv"))
 
 # Quick look at the data
-glimpse(indego)
+glimpse(indegoQ3)
 ```
 
 ```{r explore_data}
@@ -1619,16 +1619,24 @@ Q3_train <- Q3_study_panel_complete %>%
 Q3_test <- Q3_study_panel_complete %>%
   filter(week >= 36)
 
+#FIX ERROR Convert to factor in TRAIN FIRST
+Q3_train$start_station <- factor(Q3_train$start_station)
+#FIX ERROR Match TEST to TRAIN levels
+Q3_test$start_station <- factor(
+  Q3_test$start_station,
+  levels = levels(Q3_train$start_station)
+)
+
 cat("Training observations:", format(nrow(Q3_train), big.mark = ","), "\n")
 cat("Testing observations:", format(nrow(Q3_test), big.mark = ","), "\n")
 cat("Training date range:", min(Q3_train$date), "to", max(Q3_train$date), "\n")
 cat("Testing date range:", min(Q3_test$date), "to", max(Q3_test$date), "\n")
 
 #FIX ERROR
-Q3_test$start_station <- factor(
-  Q3_test$start_station,
-  levels = levels(Q3_train$start_station)
-)
+# Q3_test$start_station <- factor(
+#   Q3_test$start_station,
+#   levels = levels(Q3_train$start_station)
+# )
 
 ```
    
@@ -1677,7 +1685,7 @@ Q3_model4 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day +
     Med_Inc + Percent_Taking_Transit + Percent_White +
-    as.factor(start_station),
+    start_station,
   data = Q3_train
 )
 
@@ -1691,7 +1699,7 @@ Q3_model5 <- lm(
   Trip_Count ~ as.factor(hour) + dotw_simple + Temperature + Precipitation +
     lag1Hour + lag3Hours + lag1day + rush_hour + as.factor(month) +
     Med_Inc + Percent_Taking_Transit + Percent_White +
-    as.factor(start_station) +
+    start_station +
     rush_hour * weekend,  # Rush hour effects different on weekends
   data = Q3_train
 )
@@ -1709,7 +1717,21 @@ Q3_test <- Q3_test %>%
   mutate(dotw_simple = factor(dotw, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
 
 # Set contrasts to treatment coding (dummy variables)
-contrasts(Q3_test$dotw_simple) <- contr.treatment(7)
+#contrasts(Q3_test$dotw_simple) <- contr.treatment(7)
+
+# Force test stations to match training levels
+# Q3_test$start_station <- factor(
+#   Q3_test$start_station,
+#   levels = levels(factor(Q3_train$start_station))
+# )
+
+# Keep only stations that exist in training
+Q3_test <- Q3_test %>%
+  filter(start_station %in% unique(Q3_train$start_station))
+Q3_test$start_station <- factor(
+  Q3_test$start_station,
+  levels = levels(Q3_train$start_station)
+)
 
 Q3_test <- Q3_test %>%
   mutate(
@@ -1978,7 +2000,40 @@ ggplot(Q3_temporal_errors, aes(x = time_of_day, y = MAE, fill = day_type)) +
     -   Are there seasonal patterns?
 
 3.  **Demographic patterns:**
+```{r errors_demographics}
+#| message: false
+#| warning: false
 
+# Join demographic data to station errors
+Q3_station_errors_demo <- Q3_station_errors %>%
+  left_join(
+    Q3_station_attributes %>% select(start_station, Med_Inc, Percent_Taking_Transit, Percent_White),
+    by = "start_station"
+  ) %>%
+  filter(!is.na(Med_Inc))
+
+# Create plots
+p1 <- ggplot(station_errors_demo, aes(x = Med_Inc, y = MAE)) +
+  geom_point(alpha = 0.5, color = "#3182bd") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Errors vs. Median Income", x = "Median Income", y = "MAE") +
+  plotTheme
+
+p2 <- ggplot(station_errors_demo, aes(x = Percent_Taking_Transit, y = MAE)) +
+  geom_point(alpha = 0.5, color = "#3182bd") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Errors vs. Transit Usage", x = "% Taking Transit", y = "MAE") +
+  plotTheme
+
+p3 <- ggplot(station_errors_demo, aes(x = Percent_White, y = MAE)) +
+  geom_point(alpha = 0.5, color = "#3182bd") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Errors vs. Race", x = "% White", y = "MAE") +
+  plotTheme
+
+(p1 | p2) / (p3 | plot_spacer())
+```
     -   Relate errors to census characteristics
     -   Are certain communities systematically harder to predict?
     -   What are the equity implications?
