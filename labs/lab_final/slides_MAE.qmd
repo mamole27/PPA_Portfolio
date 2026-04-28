@@ -87,7 +87,7 @@ We tested two approaches:
 
 ## Exploratory Visualizations
 
-![](images/ppevictions.png)
+![](Images/ppevictions.png)
 
 ## Exploratory Visualizations
 
