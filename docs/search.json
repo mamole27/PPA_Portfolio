@@ -1048,5 +1048,103 @@
     "title": "Bikeshare Space-Time Prediction",
     "section": "What to Submit (per team)",
     "text": "What to Submit (per team)\n\nqmd file with all your code (commented!)\nBrief report summarizing the following with supporting data & visualization:\n\nYour quarter and why you chose it\nModel comparison results\nError analysis insights\nNew features you added and why\nCritical reflection on deployment\n\nHTML output with results and visualizations"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#the-problem",
+    "href": "labs/lab_final/slides_MAE.html#the-problem",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "The Problem",
+    "text": "The Problem\nEvictions are an indicator of instability and they are unevenly distributed across Philadelphia. Planning efforts targeting evictions address and identify patterns after spikes in counts. This is reactive. Effective planning efforts should be proactive, able to follow patterns and predict which neighborhoods (tracts) will have higher counts in a month."
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#research-question",
+    "href": "labs/lab_final/slides_MAE.html#research-question",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Research Question",
+    "text": "Research Question\nWhich tracts in Philadelphia will be in the top 25% of evictions in any given month?\nThis framework shifts aware from a simple count and helps to identify citywide patterns."
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#impact-for-planning",
+    "href": "labs/lab_final/slides_MAE.html#impact-for-planning",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Impact for Planning",
+    "text": "Impact for Planning\n\nPredicting areas impacted heavily by evictions monthly\nWork with predicting - proactive vs. reactive"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#variables",
+    "href": "labs/lab_final/slides_MAE.html#variables",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Variables",
+    "text": "Variables\n\nCensus, Demographic, & Housing\n\nHousing Cost & Gross Rent\nRent Burden (% of households)\nIncome Level\nAge of Housing\nHousehold Tenure (% of households renting vs. owning)\nUnemployment Rate\nRacial Majority\nPoverty Rate\nProportion of Renters with Housing Vouchers\nGender (%)\n\nSpatial\n\nCensus Tract Geography Fixed Effects\nVacant Lots\n\nTemporal\n\nCyclical - Lease endings - Monthly & Yearly Lags\nPandemic-Era Eviction Moratorium\nOutliars Significantly Below Pre-Pandemic Baseline"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#data-sources",
+    "href": "labs/lab_final/slides_MAE.html#data-sources",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Data Sources",
+    "text": "Data Sources\n\nEviction Lab Philadelphia Monthly Eviction Data 2020-2026\n\nhttps://evictionlab.org/eviction-tracking/get-the-data/\n\nCensus ACS 5-Year Estimates: 2024 / Philadelphia County Tracts\n\nDownloaded using getacs in R\n\nOpenData Philly\n\nHousing Choice Voucher data\nVacant property indicators"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#methods",
+    "href": "labs/lab_final/slides_MAE.html#methods",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Methods",
+    "text": "Methods\nExploratory Data Analysis (EDA)\n\nEvictions dropped sharply during COVID-19 due to moratorium policies\nData remained unstable through 2022\nPost-2022 trends stabilized → used for modeling\nPersistent spatial clustering in North and West Philadelphia\n\nModeling Strategy\nWe tested two approaches:\n1. Count Models - Poisson regression - Negative binomial regression - Used to predict eviction counts - Finding: Limited prediction accuracy\n2. Classification Model (Final Approach) - Logistic regression predicting: - High-risk tracts (top 25%) vs. low-risk - Why this works better: - More aligned with policy decisions - More stable so better to interpret - Better predictive performance"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#exploratory-visualizations",
+    "href": "labs/lab_final/slides_MAE.html#exploratory-visualizations",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Exploratory Visualizations",
+    "text": "Exploratory Visualizations\n\nWe identified outliers in the 2020-2026 data during EDA (see methods). Data from 2020 is skewed by the pandemic and by eviction moratoriums put in place during and in the aftermath of COVID. The data remained skewed through 2022, so for our modeling we excluded 2020 through 2022 data, focusing on 2023-2026 which followed more typical trends."
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#exploratory-visualizations-1",
+    "href": "labs/lab_final/slides_MAE.html#exploratory-visualizations-1",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Exploratory Visualizations",
+    "text": "Exploratory Visualizations"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#exploratory-visualizations-2",
+    "href": "labs/lab_final/slides_MAE.html#exploratory-visualizations-2",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Exploratory Visualizations",
+    "text": "Exploratory Visualizations\n\nWe can identify yearly clusters of higher total evictions, showing tracts with consistently higher numbers of evictions."
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#model-visualizations",
+    "href": "labs/lab_final/slides_MAE.html#model-visualizations",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Model Visualizations",
+    "text": "Model Visualizations\n\nModel performs unevenly across space, higher errors in tracts with more volatile eviction patterns"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#model-visualizations-1",
+    "href": "labs/lab_final/slides_MAE.html#model-visualizations-1",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Model Visualizations",
+    "text": "Model Visualizations\n\nROC AUC: 0.855 → Strong ability to distinguish high-risk tracts & Adjusted threshold improves true positive rate (Accepts more false positives to avoid missing high-risk areas)"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#key-findings",
+    "href": "labs/lab_final/slides_MAE.html#key-findings",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Key Findings",
+    "text": "Key Findings\n\nPast evictions strongly predict future evictions\nLogit model better for predicting higher risk areas than the count model"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#policy-recommendations",
+    "href": "labs/lab_final/slides_MAE.html#policy-recommendations",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Policy Recommendations",
+    "text": "Policy Recommendations\n\n\nDeploy eviction prevention resources like housing counsel or emergency rental assistance in areas that will have higher eviction counts the following month"
+  },
+  {
+    "objectID": "labs/lab_final/slides_MAE.html#limitations-considerations",
+    "href": "labs/lab_final/slides_MAE.html#limitations-considerations",
+    "title": "Mackenna Amole - CPLN 5920 Portfolio",
+    "section": "Limitations & Considerations",
+    "text": "Limitations & Considerations\n\nModel is better at predicting relative risk, not exact counts\nStrong dependence on lag variables limits long-term forecasting\nCensus data is static and may not reflect rapid neighborhood change\nMay reinforce patterns in historically disadvantaged areas (think: predictive policing example)\nOffer transparency in model forecasting upon implementation"
   }
 ]

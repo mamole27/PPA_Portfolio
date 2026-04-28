@@ -26,6 +26,12 @@ website:
             text: "Slides"          
           - href: labs/lab_3/Lab3-main/Lab3-main/technical_appendix.qmd
             text: "Technical Appendix"
+      - text: Final Project
+        menu:
+          - href: labs/lab_final/slides_MAE.qmd
+            text: "Slides"          
+          #- href: labs/lab_3/Lab3-main/Lab3-main/technical_appendix.qmd
+           # text: "Technical Appendix"
             
       
 
