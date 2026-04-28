@@ -96,44 +96,44 @@ We tested two approaches:
 
 ## Exploratory Visualization
 
-::::::: columns
-::: {.columns width="33%"}
-![](Images/blackpopVSevictions.png)
+::: columns
+
+::: column
+![](Images/blackpopVSevictions.png){height=225px}
 :::
 
-::: {.columns width="33%"}
-![](Images/povlineVSevictions.png)
+::: column
+![](Images/povlineVSevictions.png){height=225px}
 :::
 
-::: {.columns width="33%"}
-![](Images/rentburdenVSevictions.png)
+::: column
+![](Images/rentburdenVSevictions.png){height=225px}
 :::
 
-:::::::
+:::
+
 
 ## Model Visualizations
 
-![Model performs unevenly across space, higher errors in tracts with more volatile eviction patterns](Images/errorplot.png)
+:::columns
 
-## Model Visualizations
-
-::::::: columns
-::: {.columns width="25%"}
-![We can identify yearly clusters of higher total evictions, showing tracts with consistently higher numbers of evictions.](Images/filingsbytract.png)
+::: column
+![](Images/errorplot.png){height=225x}
 :::
 
-::: {.columns width="25%"}
-![](Images/blackpop_distro.png)
+::: column
+![](Images/blackpop_distro.png){height=225px}
 :::
 
-::: {.columns width="25%"}
-![](Images/povline_distro.png)
+::: column
+![](Images/povline_distro.png){height=225px}
 :::
 
-::: {.columns width="25%"}
-![](Images/rentburden_distro.png)
+::: column
+![](Images/rentburden_distro.png){height=225px}
 :::
-:::::::
+
+:::
 
 ## Model Visualizations
 
@@ -148,11 +148,13 @@ We tested two approaches:
 
 ## Policy Recommendations
 
-1.  
+1.  Good at **identifying where evictions will not be**, so can identify stable areas -> prevent overextending city resources where they are not needed
 
 2.  Deploy **eviction prevention resources** like housing counsel or emergency rental assistance in areas that will have higher eviction counts the following month
 
-3.  
+3.  General **spatial relationship between filings, model error, and vulnerable populations**, so concentrate resources in those areas and refine process of data collection to make more accurate models across the city
+
+4. Though this is a predictive model, we found housing cost burden in another model to be the most significant predictor of evictions, so **in general, mitigate rising housing costs**
 
 ## Limitations & Considerations
 
