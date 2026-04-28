@@ -93,9 +93,47 @@ We tested two approaches:
 
 ![We can identify yearly clusters of higher total evictions, showing tracts with consistently higher numbers of evictions.](Images/filingsbytract.png)
 
+
+## Exploratory Visualization
+
+::::::: columns
+::: {.columns width="33%"}
+![](Images/blackpopVSevictions.png)
+:::
+
+::: {.columns width="33%"}
+![](Images/povlineVSevictions.png)
+:::
+
+::: {.columns width="33%"}
+![](Images/rentburdenVSevictions.png)
+:::
+
+:::::::
+
 ## Model Visualizations
 
 ![Model performs unevenly across space, higher errors in tracts with more volatile eviction patterns](Images/errorplot.png)
+
+## Model Visualizations
+
+::::::: columns
+::: {.columns width="25%"}
+![We can identify yearly clusters of higher total evictions, showing tracts with consistently higher numbers of evictions.](Images/filingsbytract.png)
+:::
+
+::: {.columns width="25%"}
+![](Images/blackpop_distro.png)
+:::
+
+::: {.columns width="25%"}
+![](Images/povline_distro.png)
+:::
+
+::: {.columns width="25%"}
+![](Images/rentburden_distro.png)
+:::
+:::::::
 
 ## Model Visualizations
 
